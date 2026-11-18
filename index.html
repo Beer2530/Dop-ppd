@@ -66,8 +66,26 @@
     input[type="date"],
     input[type="datetime-local"] {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
       appearance: none;
       -webkit-appearance: none;
+    }
+    .date-input-dark {
+      color-scheme: dark;
+    }
+    .date-input-compact::-webkit-date-and-time-value {
+      text-align: left;
+    }
+    .date-input-compact::-webkit-calendar-picker-indicator {
+      margin-left: 2px;
+      padding: 0;
+      width: 14px;
+      height: 14px;
+      opacity: 0.8;
+      cursor: pointer;
     }
     @media print {
       header, footer, .no-print { display: none !important; }
@@ -79,10 +97,10 @@
 
   <!-- ==================== TOP COMMAND NAVBAR ==================== -->
   <header class="sticky top-0 z-40 w-full bg-[#1a2211]/95 backdrop-blur-md text-white border-b border-[#c9a227]/45 shadow-lg">
-    <div class="max-w-6xl w-full mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2.5 min-w-0">
+    <div class="max-w-5xl w-full mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2.5 min-w-0">
       <!-- Top-Left Official Unit Lockup + Logo -->
-      <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
-        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden ring-2 ring-[#c9a227] bg-white shadow-md shrink-0 flex items-center justify-center">
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden ring-2 ring-[#c9a227] bg-white shadow-md shrink-0 flex items-center justify-center">
           <img
             src="/assets/aistudio/logo-1_511dba15.png"
             alt="ตรากรมกำลังพลทหารบก"
@@ -95,14 +113,14 @@
           </svg>
         </div>
         <div class="min-w-0 flex-1">
-          <h1 class="font-bold text-sm sm:text-lg tracking-tight text-white truncate">หนังสือเวียนทราบ</h1>
-          <p class="text-[11px] sm:text-xs text-stone-300 font-normal truncate">กองการเตรียมพล กรมกำลังพลทหารบก</p>
+          <h1 class="font-bold text-[15px] sm:text-lg tracking-tight text-white truncate leading-tight">หนังสือเวียนทราบ</h1>
+          <p class="text-[11px] sm:text-xs text-[#efd06b] font-normal truncate mt-0.5">กองการเตรียมพล กรมกำลังพลทหารบก</p>
         </div>
       </div>
 
       <!-- Top-Right Refresh Action -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <button id="btn-refresh" onclick="app.refreshData()" aria-label="รีเฟรชข้อมูล" class="min-w-[44px] min-h-[40px] sm:min-h-[38px] px-2.5 sm:px-3.5 text-xs font-medium text-stone-100 hover:text-white bg-[#283419] hover:bg-[#344421] border border-white/15 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50">
+        <button id="btn-refresh" onclick="app.refreshData()" aria-label="รีเฟรชข้อมูล" class="w-9 h-9 sm:w-auto sm:h-9 sm:px-3.5 text-xs font-medium text-stone-100 hover:text-white bg-[#283419] hover:bg-[#344421] border border-white/15 rounded-full sm:rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50">
           <svg class="w-4 h-4 text-[#efd06b] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a9 9 0 1 1-2.64-6.36" />
             <polyline points="21 3 21 9 15 9" />
@@ -114,13 +132,13 @@
 
     <!-- Integrated Navigation Strip -->
     <div class="bg-[#12180b]/95 border-t border-white/10 px-3 sm:px-6">
-      <div class="max-w-6xl w-full mx-auto py-1.5">
-        <nav class="grid grid-cols-2 sm:inline-flex gap-1.5 w-full sm:w-auto bg-[#1b2411] p-1 rounded-xl border border-white/10">
-          <button id="tab-btn-reader" onclick="app.switchTab('reader')" class="min-h-[40px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap">
+      <div class="max-w-5xl w-full mx-auto py-1.5">
+        <nav class="grid grid-cols-2 sm:inline-flex gap-1.5 w-full sm:w-auto">
+          <button id="tab-btn-reader" onclick="app.switchTab('reader')" class="h-9 flex items-center justify-center gap-1.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             <span>หนังสือเวียนทราบ</span>
           </button>
-          <button id="tab-btn-admin" onclick="app.switchTab('admin')" class="min-h-[40px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-stone-300 hover:text-white hover:bg-white/5 whitespace-nowrap">
+          <button id="tab-btn-admin" onclick="app.switchTab('admin')" class="h-9 flex items-center justify-center gap-1.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all text-stone-300 hover:text-white hover:bg-white/5 whitespace-nowrap">
             <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <span>ผู้ดูแลระบบ</span>
           </button>
@@ -130,32 +148,33 @@
   </header>
 
   <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-10 min-w-0">
+  <main class="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 pt-3.5 sm:pt-5 pb-10 min-w-0">
 
     <!-- 1. READER VIEW -->
-    <section id="view-reader" class="space-y-4 min-w-0">
+    <section id="view-reader" class="space-y-3.5 min-w-0">
       <!-- Tactical Command Filter Panel -->
-      <div class="bg-[#1e2713]/95 backdrop-blur-md border border-[#c9a227]/30 rounded-2xl p-3 sm:p-4 shadow-xl text-white space-y-3 min-w-0">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" id="reader-filter-pills">
-          <button data-filter="all" onclick="app.setFilter('all')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap truncate transition-all">ทั้งหมด</button>
-          <button data-filter="open" onclick="app.setFilter('open')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">รอตอบกลับ</button>
-          <button data-filter="closed" onclick="app.setFilter('closed')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">ปิดรับ/หมดเวลา</button>
-          <button data-filter="info" onclick="app.setFilter('info')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">เพื่อทราบ</button>
+      <div class="bg-[#1e2713]/95 backdrop-blur-md border border-[#c9a227]/30 rounded-2xl p-3 sm:p-4 shadow-xl text-white space-y-2.5 min-w-0">
+        <div class="grid grid-cols-4 gap-1.5 sm:gap-2" id="reader-filter-pills">
+          <button data-filter="all" onclick="app.setFilter('all')" class="filter-pill h-9 sm:h-10 px-1 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap truncate transition-all">ทั้งหมด</button>
+          <button data-filter="open" onclick="app.setFilter('open')" class="filter-pill h-9 sm:h-10 px-1 sm:px-3 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">รอตอบกลับ</button>
+          <button data-filter="closed" onclick="app.setFilter('closed')" class="filter-pill h-9 sm:h-10 px-1 sm:px-3 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">ปิดรับ</button>
+          <button data-filter="info" onclick="app.setFilter('info')" class="filter-pill h-9 sm:h-10 px-1 sm:px-3 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">เพื่อทราบ</button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch min-w-0">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-2.5 items-stretch min-w-0">
           <div class="lg:col-span-6 relative min-w-0">
-            <svg class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="search-keyword" type="text" oninput="app.renderReaderList()" placeholder="ค้นหาชื่อเรื่อง, รายละเอียด, ชื่อไฟล์..." class="w-full h-11 pl-10 pr-3.5 bg-[#12180b] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
+            <svg class="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="search-keyword" type="text" oninput="app.renderReaderList()" placeholder="ค้นหาชื่อเรื่อง, รายละเอียด, ชื่อไฟล์..." class="w-full h-10 pl-9 pr-3 bg-[#12180b] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
           </div>
-          <div class="lg:col-span-6 grid grid-cols-2 sm:flex items-center gap-2 min-w-0">
-            <div class="min-w-0 flex-1">
-              <input id="filter-start-date" type="date" onchange="app.renderReaderList()" aria-label="ตั้งแต่วันที่" title="ตั้งแต่วันที่" class="w-full h-11 px-2.5 bg-[#12180b] border border-white/15 rounded-xl text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
+          <div class="lg:col-span-6 flex items-center gap-1.5 min-w-0">
+            <div class="flex-1 min-w-0 overflow-hidden">
+              <input id="filter-start-date" type="date" onchange="app.renderReaderList()" aria-label="ตั้งแต่วันที่" title="ตั้งแต่วันที่" class="date-input-dark date-input-compact w-full h-9 sm:h-10 px-2 bg-[#12180b] border border-white/15 rounded-xl text-[11px] sm:text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
             </div>
-            <div class="min-w-0 flex-1">
-              <input id="filter-end-date" type="date" onchange="app.renderReaderList()" aria-label="ถึงวันที่" title="ถึงวันที่" class="w-full h-11 px-2.5 bg-[#12180b] border border-white/15 rounded-xl text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
+            <span class="text-stone-400 text-[11px] shrink-0">ถึง</span>
+            <div class="flex-1 min-w-0 overflow-hidden">
+              <input id="filter-end-date" type="date" onchange="app.renderReaderList()" aria-label="ถึงวันที่" title="ถึงวันที่" class="date-input-dark date-input-compact w-full h-9 sm:h-10 px-2 bg-[#12180b] border border-white/15 rounded-xl text-[11px] sm:text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
             </div>
-            <button onclick="app.resetFilters()" class="col-span-2 sm:col-span-1 h-11 px-4 text-stone-200 hover:text-white bg-[#12180b] hover:bg-[#2a371a] border border-white/15 rounded-xl text-xs font-semibold shrink-0 transition-colors" title="ล้างตัวกรอง">ล้างตัวกรอง</button>
+            <button onclick="app.resetFilters()" class="h-9 sm:h-10 px-2.5 sm:px-3 text-stone-300 hover:text-white bg-[#12180b] hover:bg-[#2a371a] border border-white/15 rounded-xl text-[11px] sm:text-xs font-medium shrink-0 transition-colors whitespace-nowrap" title="ล้างตัวกรอง">ล้าง</button>
           </div>
         </div>
       </div>
@@ -884,8 +903,8 @@
         document.querySelectorAll('.filter-pill').forEach((btn) => {
           const isAct = btn.getAttribute('data-filter') === f;
           btn.className = isAct
-            ? 'filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap truncate transition-all'
-            : 'filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all';
+            ? 'filter-pill h-9 sm:h-10 px-1 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap truncate transition-all'
+            : 'filter-pill h-9 sm:h-10 px-1 sm:px-3 rounded-xl text-[11px] sm:text-xs font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all';
         });
         this.renderReaderList();
       },
@@ -994,24 +1013,24 @@
             }
 
             return `
-              <article id="reader-card-${escHtml(d.id)}" class="rounded-2xl p-4 sm:p-5 border shadow-md transition-all min-w-0 ${
+              <article id="reader-card-${escHtml(d.id)}" class="rounded-2xl p-4 sm:p-5 border border-l-4 border-l-[#c9a227] shadow-md transition-all min-w-0 ${
                 isActive ? 'bg-[#fcfaf0] border-[#c9a227] ring-2 ring-[#c9a227]/40' : 'bg-[#fafaf7] border-[#cfd6bf]'
               }">
                 <div class="flex items-start justify-between gap-2.5 min-w-0">
-                  <h3 class="font-bold text-sm sm:text-base text-stone-900 leading-snug break-words min-w-0 flex-1">${escHtml(d.title)}</h3>
+                  <h3 class="font-bold text-[15px] sm:text-base text-stone-900 leading-snug break-words min-w-0 flex-1">${escHtml(d.title)}</h3>
                   <div class="shrink-0">${statusTag}</div>
                 </div>
                 ${d.description ? `<p class="text-stone-600 text-xs sm:text-sm mt-2 line-clamp-2 break-words">${escHtml(d.description)}</p>` : ''}
 
-                <div class="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-stone-500 font-medium tabular-nums">
-                  <span>ประกาศ ${fmtDate(d.createdAt)}</span>
-                  ${!d.noReply && Number(d.deadline) > 0 ? `<span class="text-stone-300">·</span><span class="text-amber-800 font-semibold">กำหนดตอบ ${fmtDateTime(d.deadline)}</span>` : ''}
+                <div class="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-stone-500 font-medium tabular-nums">
+                  <span>ประกาศเมื่อ: ${fmtDate(d.createdAt)}</span>
+                  ${!d.noReply && Number(d.deadline) > 0 ? `<span class="text-stone-300">·</span><span class="text-amber-800 font-semibold">กำหนดตอบ: ${fmtDateTime(d.deadline)}</span>` : ''}
                   ${!d.noReply ? `<span class="text-stone-300">·</span><span class="text-stone-700 font-semibold">ตอบแล้ว ${d.replyCount || 0} คน</span>` : ''}
                 </div>
 
                 ${
                   cd
-                    ? `<div class="mt-3"><span id="cd-${escHtml(d.id)}" class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
+                    ? `<div class="mt-2.5"><span id="cd-${escHtml(d.id)}" class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
                         cd.closed
                           ? 'bg-red-50 text-red-700 border border-red-200'
                           : cd.urgent
@@ -1021,30 +1040,30 @@
                     : ''
                 }
 
-                <div class="mt-4 pt-3 border-t border-stone-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div class="mt-3.5 pt-3 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2">
                   <div class="flex flex-wrap items-center gap-2 min-w-0">
                     ${
                       hasFile
-                        ? `<button onclick="app.openPdfViewer('${escHtml(d.id)}')" onmouseenter="app.prefetchPdf('${escHtml(d.id)}')" ontouchstart="app.prefetchPdf('${escHtml(d.id)}')" class="min-h-[42px] inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#1e2713] bg-[#edf2e0] hover:bg-[#dfe8cb] border border-[#c3cfab] rounded-xl shadow-sm transition-colors">
+                        ? `<button onclick="app.openPdfViewer('${escHtml(d.id)}')" onmouseenter="app.prefetchPdf('${escHtml(d.id)}')" ontouchstart="app.prefetchPdf('${escHtml(d.id)}')" class="h-10 inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold text-[#1e2713] bg-[#edf2e0] hover:bg-[#dfe8cb] border border-[#c3cfab] rounded-xl shadow-sm transition-colors">
                              <svg class="w-4 h-4 text-[#3a4a21] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                              <span>เปิดอ่านทันที</span>
-                             <span class="px-1.5 py-0.5 text-[11px] font-bold bg-[#2e3b19] text-[#f3df92] rounded-md tabular-nums">${d.viewCount || 0}</span>
+                             <span class="px-2 py-0.5 text-[11px] font-bold bg-[#2e3b19] text-[#f3df92] rounded-full tabular-nums">เปิดอ่านแล้ว ${d.viewCount || 0} คน</span>
                            </button>
                            ${
                              d.driveFileId
-                               ? `<a href="https://drive.google.com/uc?export=download&id=${encodeURIComponent(d.driveFileId)}" target="_blank" rel="noopener noreferrer" class="min-h-[42px] inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors">
+                               ? `<a href="https://drive.google.com/uc?export=download&id=${encodeURIComponent(d.driveFileId)}" target="_blank" rel="noopener noreferrer" class="h-10 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors">
                                     <span>⬇ ดาวน์โหลด</span>
                                   </a>`
-                               : `<button onclick="app.downloadDocFile('${escHtml(d.id)}')" class="min-h-[42px] inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors">
+                               : `<button onclick="app.downloadDocFile('${escHtml(d.id)}')" class="h-10 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors">
                                     <span>⬇ ดาวน์โหลด</span>
                                   </button>`
                            }`
-                        : `<span class="inline-flex items-center min-h-[38px] px-3 py-1.5 bg-stone-100 border border-stone-200 rounded-xl text-xs text-stone-500">ไม่มีไฟล์แนบ</span>`
+                        : `<span class="inline-flex items-center h-9 px-3 py-1.5 bg-stone-100 border border-stone-200 rounded-xl text-xs text-stone-500">ไม่มีไฟล์แนบ</span>`
                     }
                   </div>
                   ${
                     !d.noReply
-                      ? `<button onclick="app.openReplyModal('${escHtml(d.id)}')" ${isOpen ? '' : 'disabled'} class="w-full sm:w-auto min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all ${
+                      ? `<button onclick="app.openReplyModal('${escHtml(d.id)}')" ${isOpen ? '' : 'disabled'} class="w-full sm:w-auto h-10 px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all ${
                           isOpen ? 'bg-[#2e3b19] hover:bg-[#232d12] text-white border border-[#c9a227]/35' : 'bg-stone-200 text-stone-400 cursor-not-allowed'
                         }">${replied ? 'แก้ไขการตอบกลับ' : 'ตอบกลับหนังสือ'}</button>`
                       : ''
