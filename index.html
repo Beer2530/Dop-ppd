@@ -6,9 +6,45 @@
   <title>หนังสือเวียนทราบ — กองการเตรียมพล กรมกำลังพลทหารบก</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #384520; }
+    :root { --olive-900:#1a210f; --olive-800:#232c14; --olive-600:#46562a; --gold:#c9a227; --paper:#f7f4ea; --ink:#222418; --stamp:#9a3324; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #2b3718 radial-gradient(900px 420px at 50% -120px, #556a30 0%, transparent 70%) no-repeat fixed;
+    }
+    header h1, .doc-card h3, h2, #replyModal h3, #reportModal h3 { font-family: 'Noto Serif Thai', 'Sarabun', serif; }
+    header.sticky { background: linear-gradient(180deg, #2b3717, #1f2812) !important; }
+    .emblem { box-shadow: 0 0 0 3px rgba(201,162,39,.35), 0 4px 10px rgba(0,0,0,.4); }
+
+    /* การ์ดหนังสือเวียน: กระดาษหนังสือราชการ แถบสีด้านซ้ายบอกสถานะ */
+    .doc-card {
+      position: relative; overflow: hidden; background: var(--paper); color: var(--ink);
+      border-radius: 14px; padding: 1.1rem 1.25rem 1.1rem 1.6rem;
+      box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 12px 26px -14px rgba(0,0,0,.6);
+    }
+    .doc-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 7px; background: var(--bar, #a8a89c); }
+    .doc-card.st-open { --bar: var(--gold); }
+    .doc-card.st-info { --bar: var(--olive-600); }
+    .doc-card.st-closed { --bar: #a8a89c; background: #efede4; }
+    .doc-card h3 { line-height: 1.45; }
+    .deadline-stamp {
+      color: var(--stamp); border: 1.5px solid var(--stamp); border-radius: 6px;
+      padding: 1px 9px; font-weight: 700; transform: rotate(-1.2deg); display: inline-block;
+    }
+
+    /* ปุ่ม / ช่องกรอก */
+    button, a { transition: background-color .15s, color .15s, transform .15s, box-shadow .15s; }
+    button:active:not(:disabled) { transform: scale(.97); }
+    .cat-btn:not(.bg-\[\#c9a227\]):hover { background-color: #2f3b18; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold); }
+
+    /* หน้าต่างป๊อปอัป: ขยับเข้าเมื่อผู้ใช้กดเปิด */
+    @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+    #replyModal:not(.hidden) > div, #reportModal:not(.hidden) > div { animation: pop .18s ease-out; }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
   </style>
 </head>
 <body class="min-h-screen flex flex-col text-stone-900 pb-14">
@@ -17,7 +53,7 @@
   <header class="sticky top-0 z-40 bg-[#232c14]/95 backdrop-blur-md text-white border-b-4 border-[#c9a227] shadow-lg">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-11 h-11 rounded-full bg-[#c9a227] text-[#1c220f] font-bold flex items-center justify-center border-2 border-white shadow shrink-0">
+        <div class="emblem w-11 h-11 rounded-full bg-[#c9a227] text-[#1c220f] font-bold flex items-center justify-center border-2 border-white shrink-0">
           กพ.
         </div>
         <div class="min-w-0">
@@ -89,6 +125,8 @@
           </div>
         </div>
       </div>
+
+      <p id="docSummary" class="px-1 text-sm text-amber-100/90"></p>
 
       <div id="docsContainer" class="space-y-3.5">
         <div class="bg-white/95 rounded-2xl p-8 text-center text-stone-500 text-sm">กำลังโหลดข้อมูลหนังสือเวียนทราบ...</div>
@@ -226,7 +264,7 @@
   </main>
 
   <footer class="text-center text-xs text-amber-200/60 mt-auto py-4">
-    กองการเตรียมพล กรมกำลังพลทหารบก · ระบบหนังสือเวียนทราบ
+    กองการเตรียมพล กรมกำลังพลทหารบก<br>ระบบหนังสือเวียนทราบ
   </footer>
 
   <script>
@@ -391,6 +429,8 @@
         return true;
       });
 
+      const openCount = state.docs.filter(d => !d.noReply && isDocOpen(d)).length;
+      document.getElementById('docSummary').textContent = `แสดง ${list.length} รายการ ตอนนี้รอตอบกลับ ${openCount} รายการ`;
       const container = document.getElementById('docsContainer');
       if (list.length === 0) {
         container.innerHTML = `<div class="bg-white/95 rounded-2xl p-8 text-center text-stone-500 text-sm">ไม่พบหนังสือเวียนทราบตามเงื่อนไข</div>`;
@@ -402,7 +442,7 @@
         const cd = getCountdownText(d);
         const hasFile = Boolean(d.driveFileId);
         return `
-          <article class="bg-white/95 rounded-2xl p-4 sm:p-5 border-l-8 border-l-[#c9a227] shadow-md">
+          <article class="doc-card ${d.noReply ? 'st-info' : open ? 'st-open' : 'st-closed'}">
             <div class="flex items-start justify-between gap-2">
               <h3 class="font-bold text-base sm:text-lg text-stone-900">${d.title}</h3>
               <span class="px-2.5 py-1 text-xs font-semibold rounded-full shrink-0 ${
@@ -412,7 +452,7 @@
             ${d.description ? `<p class="text-xs sm:text-sm text-stone-600 mt-1.5">${d.description}</p>` : ''}
             <div class="mt-2.5 flex flex-wrap gap-3 text-xs text-stone-500">
               <span>📅 ประกาศเมื่อ: ${formatDate(d.createdAt)}</span>
-              ${!d.noReply && d.deadline ? `<span class="text-amber-800 font-semibold">⏰ กำหนดตอบ: ${formatDateTime(d.deadline)}</span>` : ''}
+              ${!d.noReply && d.deadline ? `<span class="deadline-stamp">⏰ กำหนดตอบ: ${formatDateTime(d.deadline)}</span>` : ''}
               ${!d.noReply ? `<span class="bg-stone-100 px-2 py-0.5 rounded">ตอบแล้ว ${d.replyCount || 0} คน</span>` : ''}
             </div>
             ${cd ? `<div class="mt-2"><span class="inline-block px-3 py-1 rounded-lg text-xs font-semibold font-mono bg-[#e9eed9] text-[#2b3519]">${cd}</span></div>` : ''}
