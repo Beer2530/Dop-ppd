@@ -5,6 +5,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
 
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname), {
   index: 'index.html'
 }));

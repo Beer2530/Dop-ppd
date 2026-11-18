@@ -2,74 +2,127 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>หนังสือเวียนทราบ — กองการเตรียมพล กรมกำลังพลทหารบก</title>
 
-  <!-- Google Font: Prompt -->
+  <!-- Google Font: Prompt & IBM Plex Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Preconnect & Preload for faster GAS & PDF.js startup -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+  <link rel="preconnect" href="https://script.google.com" crossorigin />
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
+  <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin />
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- PDF.js UMD (รองรับทั้งเปิดไฟล์ตรง, Vercel, GitHub Pages และ Google Apps Script) -->
+  <!-- PDF.js UMD -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
-    * { font-family: 'Prompt', sans-serif; }
-    body {
-      background-color: #384520;
-      color: #1c1917;
+    *, *::before, *::after {
+      box-sizing: border-box;
+      font-family: 'Prompt', sans-serif;
+    }
+    html, body {
+      max-width: 100%;
+      width: 100%;
       margin: 0;
       padding: 0;
-      overflow-x: hidden;
+      overflow-x: clip;
+      overscroll-behavior-x: none;
+      background-color: #161d0f;
+      color: #1c1917;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-image:
+        radial-gradient(circle at 18% 0%, rgba(201, 162, 39, 0.08) 0%, transparent 46%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 28px 28px, 28px 28px;
+      background-position: 0 0, 0 0, 0 0;
+    }
+    .font-mono-num {
+      font-family: 'IBM Plex Mono', 'Prompt', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    input[type="date"],
+    input[type="datetime-local"],
+    input[type="file"],
+    input[type="text"],
+    input[type="password"],
+    select,
+    textarea {
+      max-width: 100%;
+      min-width: 0;
+    }
+    input[type="date"],
+    input[type="datetime-local"] {
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
     }
     @media print {
       header, footer, .no-print { display: none !important; }
-      body { background: #ffffff !important; }
+      body { background: #ffffff !important; background-image: none !important; }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#384520] text-stone-900 selection:bg-[#c9a227] selection:text-white pb-12">
+<body class="min-h-[100dvh] flex flex-col text-stone-900 selection:bg-[#c9a227] selection:text-[#161d0f]">
 
-  <!-- ==================== TOP NAVBAR ==================== -->
-  <header class="sticky top-0 z-40 w-full bg-[#232c14]/95 backdrop-blur-md text-white border-b-4 border-[#c9a227] shadow-lg">
-    <div class="max-w-6xl w-full mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-11 h-11 sm:w-13 sm:h-13 rounded-full overflow-hidden border-2 border-[#c9a227] shadow-md bg-white flex-shrink-0 flex items-center justify-center">
-          <svg viewBox="0 0 64 64" class="w-9 h-9 text-[#384520]" fill="none" stroke="currentColor" stroke-width="2.5">
+  <!-- ==================== TOP COMMAND NAVBAR ==================== -->
+  <header class="sticky top-0 z-40 w-full bg-[#1a2211]/95 backdrop-blur-md text-white border-b border-[#c9a227]/45 shadow-lg">
+    <div class="max-w-6xl w-full mx-auto px-3 sm:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2.5 min-w-0">
+      <!-- Top-Left Official Unit Lockup + Logo -->
+      <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden ring-2 ring-[#c9a227] bg-white shadow-md shrink-0 flex items-center justify-center">
+          <img
+            src="/assets/aistudio/logo-1_511dba15.png"
+            alt="ตรากรมกำลังพลทหารบก"
+            class="w-full h-full object-cover"
+            onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+          />
+          <svg viewBox="0 0 64 64" class="hidden w-8 h-8 text-[#384520]" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="32" cy="32" r="26" stroke="#c9a227" stroke-width="3" fill="#f5f8ed"/>
-            <path d="M22 22h20M22 30h20M22 38h13" stroke="#384520" stroke-linecap="round"/>
-            <path d="M38 42l4 4 7-8" stroke="#15803d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 24h20M22 32h20M22 40h12" stroke="#384520" stroke-linecap="round"/>
           </svg>
         </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 min-w-0">
-            <h1 class="font-bold text-base sm:text-xl tracking-tight text-white truncate">หนังสือเวียนทราบ</h1>
-            <span class="px-2 py-0.5 text-xs font-semibold bg-[#c9a227]/25 text-amber-300 border border-[#c9a227]/40 rounded-full shrink-0">กพ.ทบ.</span>
-          </div>
-          <p class="text-[11px] sm:text-sm text-amber-200/90 font-medium truncate">กองการเตรียมพล กรมกำลังพลทหารบก</p>
+        <div class="min-w-0 flex-1">
+          <h1 class="font-bold text-sm sm:text-lg tracking-tight text-white truncate">หนังสือเวียนทราบ</h1>
+          <p class="text-[11px] sm:text-xs text-stone-300 font-normal truncate">กองการเตรียมพล กรมกำลังพลทหารบก</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
-        <button id="btn-refresh" onclick="app.refreshData()" class="p-2 sm:px-3 sm:py-1.5 text-xs font-medium text-stone-200 hover:text-white bg-[#34401c] hover:bg-[#435324] border border-white/15 rounded-xl active:scale-95 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50">
-          <span>🔄</span>
+      <!-- Top-Right Refresh Action -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="btn-refresh" onclick="app.refreshData()" aria-label="รีเฟรชข้อมูล" class="min-w-[44px] min-h-[40px] sm:min-h-[38px] px-2.5 sm:px-3.5 text-xs font-medium text-stone-100 hover:text-white bg-[#283419] hover:bg-[#344421] border border-white/15 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50">
+          <svg class="w-4 h-4 text-[#efd06b] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <polyline points="21 3 21 9 15 9" />
+          </svg>
           <span class="hidden sm:inline">รีเฟรช</span>
         </button>
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="bg-[#1a210f] border-t border-white/10 px-3 sm:px-6">
-      <div class="max-w-6xl mx-auto">
-        <nav class="flex gap-2 py-1.5">
-          <button id="tab-btn-reader" onclick="app.switchTab('reader')" class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-[#c9a227] text-[#1c220f] shadow-md">
-            <span>📄</span><span>หนังสือเวียนทราบ</span>
+    <!-- Integrated Navigation Strip -->
+    <div class="bg-[#12180b]/95 border-t border-white/10 px-3 sm:px-6">
+      <div class="max-w-6xl w-full mx-auto py-1.5">
+        <nav class="grid grid-cols-2 sm:inline-flex gap-1.5 w-full sm:w-auto bg-[#1b2411] p-1 rounded-xl border border-white/10">
+          <button id="tab-btn-reader" onclick="app.switchTab('reader')" class="min-h-[40px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>หนังสือเวียนทราบ</span>
           </button>
-          <button id="tab-btn-admin" onclick="app.switchTab('admin')" class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-stone-300 hover:text-white hover:bg-white/5">
-            <span>🔒</span><span>ผู้ดูแลระบบ</span>
+          <button id="tab-btn-admin" onclick="app.switchTab('admin')" class="min-h-[40px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-stone-300 hover:text-white hover:bg-white/5 whitespace-nowrap">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>ผู้ดูแลระบบ</span>
           </button>
         </nav>
       </div>
@@ -77,210 +130,223 @@
   </header>
 
   <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 pt-4 sm:pt-5 pb-12">
+  <main class="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-10 min-w-0">
 
     <!-- 1. READER VIEW -->
-    <section id="view-reader" class="space-y-4">
-      <!-- Search & Filter Card -->
-      <div class="bg-[#2a3517]/90 backdrop-blur-md border border-[#c9a227]/30 rounded-2xl p-3 sm:p-5 shadow-lg text-white">
-        <div class="grid grid-cols-4 sm:flex sm:items-center gap-1.5 sm:gap-2" id="reader-filter-pills">
-          <button data-filter="all" onclick="app.setFilter('all')" class="filter-pill px-1.5 sm:px-4 py-2 rounded-xl text-[11px] sm:text-sm font-bold bg-[#c9a227] text-[#1c220f] shadow whitespace-nowrap truncate">ทั้งหมด</button>
-          <button data-filter="open" onclick="app.setFilter('open')" class="filter-pill px-1.5 sm:px-4 py-2 rounded-xl text-[11px] sm:text-sm font-semibold bg-[#1e2610] text-stone-200 hover:bg-[#34421b] border border-white/10 whitespace-nowrap truncate">รอตอบกลับ</button>
-          <button data-filter="closed" onclick="app.setFilter('closed')" class="filter-pill px-1.5 sm:px-4 py-2 rounded-xl text-[11px] sm:text-sm font-semibold bg-[#1e2610] text-stone-200 hover:bg-[#34421b] border border-white/10 whitespace-nowrap truncate">หมดเวลา/ปิดรับ</button>
-          <button data-filter="info" onclick="app.setFilter('info')" class="filter-pill px-1.5 sm:px-4 py-2 rounded-xl text-[11px] sm:text-sm font-semibold bg-[#1e2610] text-stone-200 hover:bg-[#34421b] border border-white/10 whitespace-nowrap truncate">📌 เพื่อทราบ</button>
+    <section id="view-reader" class="space-y-4 min-w-0">
+      <!-- Tactical Command Filter Panel -->
+      <div class="bg-[#1e2713]/95 backdrop-blur-md border border-[#c9a227]/30 rounded-2xl p-3 sm:p-4 shadow-xl text-white space-y-3 min-w-0">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2" id="reader-filter-pills">
+          <button data-filter="all" onclick="app.setFilter('all')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap truncate transition-all">ทั้งหมด</button>
+          <button data-filter="open" onclick="app.setFilter('open')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">รอตอบกลับ</button>
+          <button data-filter="closed" onclick="app.setFilter('closed')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">ปิดรับ/หมดเวลา</button>
+          <button data-filter="info" onclick="app.setFilter('info')" class="filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all">เพื่อทราบ</button>
         </div>
 
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
-          <div class="sm:col-span-6 relative">
-            <input id="search-keyword" type="text" oninput="app.renderReaderList()" placeholder="🔍 ค้นหาชื่อเรื่อง, รายละเอียด, ชื่อไฟล์..." class="w-full px-3.5 py-2 h-10 bg-[#1a210e] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch min-w-0">
+          <div class="lg:col-span-6 relative min-w-0">
+            <svg class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="search-keyword" type="text" oninput="app.renderReaderList()" placeholder="ค้นหาชื่อเรื่อง, รายละเอียด, ชื่อไฟล์..." class="w-full h-11 pl-10 pr-3.5 bg-[#12180b] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
           </div>
-          <div class="sm:col-span-6 flex items-center gap-1.5">
-            <input id="filter-start-date" type="date" onchange="app.renderReaderList()" class="w-full px-2 py-1.5 h-10 bg-[#1a210e] border border-white/15 rounded-xl text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" title="ตั้งแต่วันที่" />
-            <span class="text-stone-400 text-xs shrink-0">ถึง</span>
-            <input id="filter-end-date" type="date" onchange="app.renderReaderList()" class="w-full px-2 py-1.5 h-10 bg-[#1a210e] border border-white/15 rounded-xl text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" title="ถึงวันที่" />
-            <button onclick="app.resetFilters()" class="h-10 px-2.5 text-stone-300 hover:text-white bg-[#1a210e] border border-white/15 rounded-xl text-xs shrink-0" title="ล้างตัวกรอง">ล้าง</button>
+          <div class="lg:col-span-6 grid grid-cols-2 sm:flex items-center gap-2 min-w-0">
+            <div class="min-w-0 flex-1">
+              <input id="filter-start-date" type="date" onchange="app.renderReaderList()" aria-label="ตั้งแต่วันที่" title="ตั้งแต่วันที่" class="w-full h-11 px-2.5 bg-[#12180b] border border-white/15 rounded-xl text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <input id="filter-end-date" type="date" onchange="app.renderReaderList()" aria-label="ถึงวันที่" title="ถึงวันที่" class="w-full h-11 px-2.5 bg-[#12180b] border border-white/15 rounded-xl text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
+            </div>
+            <button onclick="app.resetFilters()" class="col-span-2 sm:col-span-1 h-11 px-4 text-stone-200 hover:text-white bg-[#12180b] hover:bg-[#2a371a] border border-white/15 rounded-xl text-xs font-semibold shrink-0 transition-colors" title="ล้างตัวกรอง">ล้างตัวกรอง</button>
           </div>
         </div>
       </div>
 
       <!-- Reader Document Cards Container -->
-      <div id="reader-docs-list" class="space-y-3.5">
-        <div class="bg-white/95 rounded-2xl p-8 text-center text-stone-500 text-sm shadow-md">กำลังโหลดข้อมูลหนังสือเวียนทราบ...</div>
+      <div id="reader-docs-list" class="space-y-3 min-w-0">
+        <div class="bg-[#fafaf7] rounded-2xl p-8 text-center text-stone-500 text-sm border border-[#d4dac7] shadow-md">กำลังโหลดข้อมูลหนังสือเวียนทราบ...</div>
       </div>
     </section>
 
     <!-- 2. ADMIN LOGIN GATE -->
-    <section id="view-admin-gate" class="hidden">
-      <div class="max-w-md mx-auto my-10 bg-white/95 rounded-2xl p-6 sm:p-8 border-t-4 border-[#c9a227] shadow-2xl text-center space-y-5">
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-[#f1f4e6] text-[#46562a] flex items-center justify-center border border-[#d2dcc0] text-2xl">🔒</div>
+    <section id="view-admin-gate" class="hidden min-w-0">
+      <div class="max-w-md mx-auto my-6 sm:my-10 bg-[#fafaf7] rounded-2xl p-6 sm:p-8 border border-[#c9a227]/50 shadow-2xl text-center space-y-5">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-[#1f2914] text-[#efd06b] flex items-center justify-center border border-[#c9a227]/50 shadow-md">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect x="9" y="10" width="6" height="5" rx="1"/><path d="M10 10V8a2 2 0 1 1 4 0v2"/></svg>
+        </div>
         <div>
           <h2 class="text-lg sm:text-xl font-bold text-stone-900">เข้าสู่ระบบผู้ดูแลระบบ</h2>
-          <p class="text-xs text-stone-500 mt-1">สำหรับเพิ่มและแก้ไขหนังสือเวียนทราบ ตรวจสอบการตอบกลับ</p>
+          <p class="text-xs text-stone-500 mt-1">สำหรับเผยแพร่ แก้ไข และตรวจสอบรายงานการตอบกลับ</p>
         </div>
         <div id="admin-pin-error" class="hidden p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200"></div>
         <form onsubmit="app.handleAdminLoginSubmit(event)" class="space-y-4">
-          <input id="admin-pin-input" type="password" inputmode="numeric" oninput="app.handleAdminPinTyping(this.value)" placeholder="รหัสผ่านผู้ดูแล (ค่าเริ่มต้น 1234)" class="w-full px-4 py-3 text-center text-sm tracking-widest rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#46562a] bg-stone-50" />
-          <button type="submit" class="w-full py-3 px-4 bg-[#46562a] hover:bg-[#38461f] active:scale-95 text-white text-sm font-semibold rounded-xl shadow-md transition-all">
-            เข้าสู่ระบบ →
+          <input id="admin-pin-input" type="password" inputmode="numeric" autocomplete="current-password" oninput="app.handleAdminPinTyping(this.value)" placeholder="กรอกรหัสผ่านผู้ดูแล" class="w-full h-12 px-4 text-center text-sm tracking-widest rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#3a4a21] bg-white" />
+          <button type="submit" class="w-full h-12 px-4 bg-[#2e3b19] hover:bg-[#232d12] active:scale-[0.99] text-white text-sm font-semibold rounded-xl shadow-md border border-[#c9a227]/40 transition-all">
+            เข้าสู่ระบบผู้ดูแล
           </button>
         </form>
       </div>
     </section>
 
     <!-- 3. ADMIN VIEW -->
-    <section id="view-admin" class="hidden space-y-6">
+    <section id="view-admin" class="hidden space-y-5 min-w-0">
       <!-- Add New Document Card -->
-      <div class="bg-white/95 rounded-2xl p-4 sm:p-6 border border-stone-200 shadow-xl border-l-8 border-l-[#46562a]">
-        <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-100 flex-wrap gap-2">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">➕</span>
-            <h2 class="text-base sm:text-lg font-bold text-stone-900">เพิ่มหนังสือเวียนทราบใหม่</h2>
+      <div class="bg-[#fafaf7] rounded-2xl overflow-hidden border border-[#cfd6bf] shadow-xl min-w-0">
+        <div class="bg-[#1e2713] text-white px-4 sm:px-6 py-3.5 border-b border-[#c9a227]/40 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-[#c9a227] shrink-0"></span>
+            <h2 class="text-sm sm:text-base font-bold tracking-tight truncate">เพิ่มหนังสือเวียนทราบใหม่</h2>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="hidden sm:inline text-xs text-stone-500 font-medium">เก็บไฟล์ไว้ใน Google Drive ถาวร (ไม่มีการลบอัตโนมัติ)</span>
-            <button type="button" onclick="app.adminLogout()" class="px-3 py-1.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-red-50 hover:text-red-700 border border-stone-200 rounded-xl">
-              🚪 ออกจากระบบผู้ดูแล
+          <div class="flex items-center gap-2.5 shrink-0">
+            <span class="hidden md:inline text-[11px] text-stone-300">เก็บไฟล์ใน Google Drive ถาวร</span>
+            <button type="button" onclick="app.adminLogout()" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-stone-200 bg-white/10 hover:bg-red-500/20 hover:text-red-200 border border-white/15 rounded-lg transition-colors">
+              ออกจากระบบ
             </button>
           </div>
         </div>
 
-        <div id="admin-status-msg" class="hidden mb-4 p-3 rounded-xl text-xs"></div>
+        <div class="p-4 sm:p-6">
+          <div id="admin-status-msg" class="hidden mb-4 p-3 rounded-xl text-xs"></div>
 
-        <form id="add-doc-form" onsubmit="app.handleAddDocument(event)" novalidate class="space-y-4">
-          <div>
-            <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1">ชื่อเรื่องหนังสือเวียนทราบ <span class="text-red-500">*</span></label>
-            <input id="add-title" type="text" placeholder="ตัวอย่าง: โครงการสงเคราะห์การสอบเข้าศึกษาต่อ..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#46562a] text-sm" />
-          </div>
-
-          <div>
-            <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1">รายละเอียด / หมายเหตุ</label>
-            <textarea id="add-desc" rows="2" placeholder="รายละเอียดสำคัญ..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#46562a] text-sm resize-none"></textarea>
-          </div>
-
-          <label class="flex items-center gap-2.5 p-3 rounded-xl border border-stone-200 bg-stone-50/70 cursor-pointer select-none">
-            <input id="add-noreply" type="checkbox" onchange="app.toggleAddDeadlineField()" class="w-4 h-4 accent-[#46562a] rounded" />
-            <span class="text-xs sm:text-sm font-medium text-stone-800">📌 หนังสือเวียนทราบเพื่อทราบเท่านั้น (ไม่ต้องตอบกลับ)</span>
-          </label>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div id="add-deadline-wrap">
-              <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1">กำหนดตอบกลับ <span class="text-red-500">*</span></label>
-              <input id="add-deadline" type="datetime-local" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#46562a] text-sm" />
+          <form id="add-doc-form" onsubmit="app.handleAddDocument(event)" novalidate class="space-y-4 min-w-0">
+            <div class="min-w-0">
+              <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1.5">ชื่อเรื่องหนังสือเวียนทราบ <span class="text-red-500">*</span></label>
+              <input id="add-title" type="text" placeholder="ตัวอย่าง: โครงการสงเคราะห์การสอบเข้าศึกษาต่อ..." class="w-full h-11 px-3.5 rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#3a4a21] text-sm" />
             </div>
 
-            <div>
-              <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1">แนบไฟล์จากเครื่อง (เฉพาะไฟล์ PDF เท่านั้น)</label>
-              <input id="add-file" type="file" accept=".pdf,application/pdf" onchange="app.handleAddFileChange(this)" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs sm:text-sm text-stone-700 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#46562a] file:text-white cursor-pointer" />
-              <div id="add-file-info" class="hidden mt-1.5 flex items-center justify-between gap-2 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[11px] text-emerald-800 font-medium"></div>
+            <div class="min-w-0">
+              <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1.5">รายละเอียด / หมายเหตุ</label>
+              <textarea id="add-desc" rows="2" placeholder="รายละเอียดสำคัญ..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#3a4a21] text-sm resize-none"></textarea>
             </div>
-          </div>
 
-          <div class="pt-2 flex justify-end">
-            <button id="add-submit-btn" type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-[#46562a] hover:bg-[#38461f] active:scale-95 rounded-xl shadow-md transition-all disabled:opacity-50">
-              <span>📤 เผยแพร่หนังสือเวียนทราบ</span>
-            </button>
-          </div>
-        </form>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-stone-200 bg-stone-100/70 cursor-pointer select-none min-h-[44px]">
+              <input id="add-noreply" type="checkbox" onchange="app.toggleAddDeadlineField()" class="w-4 h-4 accent-[#3a4a21] rounded shrink-0" />
+              <span class="text-xs sm:text-sm font-medium text-stone-800">หนังสือเวียนทราบเพื่อทราบเท่านั้น (ไม่ต้องตอบกลับ)</span>
+            </label>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
+              <div id="add-deadline-wrap" class="min-w-0">
+                <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1.5">กำหนดตอบกลับ <span class="text-red-500">*</span></label>
+                <input id="add-deadline" type="datetime-local" class="w-full h-11 px-3 rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#3a4a21] text-xs sm:text-sm" />
+              </div>
+
+              <div class="min-w-0">
+                <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1.5">แนบไฟล์จากเครื่อง (เฉพาะไฟล์ PDF)</label>
+                <input id="add-file" type="file" accept=".pdf,application/pdf" onchange="app.handleAddFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
+                <div id="add-file-info" class="hidden mt-2 flex items-center justify-between gap-2 px-2.5 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+              <button id="add-submit-btn" type="submit" class="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] active:scale-[0.99] rounded-xl shadow-md border border-[#c9a227]/35 transition-all disabled:opacity-50">
+                <span>เผยแพร่หนังสือเวียนทราบ</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <!-- Admin Table -->
-      <div class="bg-white/95 rounded-2xl p-5 border border-stone-200 shadow-lg">
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-stone-100">
-          <h2 class="text-base sm:text-lg font-bold text-stone-900">📋 รายการหนังสือเวียนทราบทั้งหมด (<span id="admin-doc-count">0</span>)</h2>
+      <!-- Admin Document List Card -->
+      <div class="bg-[#fafaf7] rounded-2xl overflow-hidden border border-[#cfd6bf] shadow-xl min-w-0">
+        <div class="px-4 sm:px-6 py-3.5 border-b border-stone-200 flex items-center justify-between bg-stone-100/70">
+          <h2 class="text-sm sm:text-base font-bold text-stone-900">รายการหนังสือเวียนทราบทั้งหมด (<span id="admin-doc-count" class="tabular-nums">0</span>)</h2>
         </div>
-        <div class="overflow-x-auto">
+
+        <!-- Mobile Card List (No horizontal table shift on phones) -->
+        <div id="admin-docs-mobile" class="md:hidden divide-y divide-stone-200 min-w-0"></div>
+
+        <!-- Desktop High-Density Table -->
+        <div class="hidden md:block w-full overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs sm:text-sm">
             <thead>
               <tr class="bg-stone-100 text-stone-700 border-b border-stone-200 font-semibold">
-                <th class="py-2.5 px-3">ชื่อเรื่อง</th>
-                <th class="py-2.5 px-3">กำหนดตอบ</th>
-                <th class="py-2.5 px-3">ตอบแล้ว</th>
-                <th class="py-2.5 px-3">สถานะ</th>
-                <th class="py-2.5 px-3 text-right">จัดการ</th>
+                <th class="py-3 px-4">ชื่อเรื่อง</th>
+                <th class="py-3 px-3 whitespace-nowrap">กำหนดตอบ</th>
+                <th class="py-3 px-3 whitespace-nowrap">ตอบแล้ว</th>
+                <th class="py-3 px-3 whitespace-nowrap">สถานะ</th>
+                <th class="py-3 px-4 text-right whitespace-nowrap">จัดการ</th>
               </tr>
             </thead>
-            <tbody id="admin-docs-tbody" class="divide-y divide-stone-100"></tbody>
+            <tbody id="admin-docs-tbody" class="divide-y divide-stone-200/80"></tbody>
           </table>
         </div>
       </div>
     </section>
 
     <!-- 4. REPORT VIEW -->
-    <section id="view-report" class="hidden bg-white/95 rounded-2xl p-5 sm:p-6 border border-stone-200 shadow-xl space-y-5">
-      <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-stone-200">
-        <div class="flex items-center gap-3">
-          <button onclick="app.closeSubView()" class="no-print px-3 py-2 text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl text-xs font-semibold">← กลับ</button>
-          <div>
-            <h2 id="report-title" class="text-base sm:text-xl font-bold text-stone-900"></h2>
-            <div id="report-meta" class="text-xs text-stone-500 mt-0.5"></div>
+    <section id="view-report" class="hidden bg-[#fafaf7] rounded-2xl p-4 sm:p-6 border border-[#cfd6bf] shadow-xl space-y-5 min-w-0">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-200 min-w-0">
+        <div class="flex items-start gap-3 min-w-0">
+          <button onclick="app.closeSubView()" class="no-print min-h-[40px] px-3 py-2 text-stone-700 bg-stone-200/70 hover:bg-stone-200 rounded-xl text-xs font-semibold shrink-0">← กลับ</button>
+          <div class="min-w-0">
+            <h2 id="report-title" class="text-sm sm:text-lg font-bold text-stone-900 break-words"></h2>
+            <div id="report-meta" class="text-xs text-stone-500 mt-0.5 tabular-nums"></div>
           </div>
         </div>
-        <div class="no-print flex items-center gap-2">
-          <button onclick="app.exportReportCsv()" class="px-3.5 py-2 text-xs font-semibold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-xl">⬇ ส่งออก CSV (Excel)</button>
-          <button onclick="window.print()" class="px-3.5 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl">🖨 พิมพ์รายงาน</button>
+        <div class="no-print flex items-center gap-2 shrink-0">
+          <button onclick="app.exportReportCsv()" class="min-h-[40px] px-3.5 py-2 text-xs font-semibold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-xl">ส่งออก CSV</button>
+          <button onclick="window.print()" class="min-h-[40px] px-3.5 py-2 text-xs font-semibold text-stone-700 bg-stone-200/70 hover:bg-stone-200 rounded-xl">พิมพ์</button>
         </div>
       </div>
 
       <!-- Summary Stat Cards -->
-      <div id="report-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+      <div id="report-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 min-w-0"></div>
 
       <!-- Report Filter Tabs -->
-      <div id="report-filter-tabs" class="no-print flex items-center gap-2 border-b border-stone-200 pb-2 overflow-x-auto"></div>
+      <div id="report-filter-tabs" class="no-print flex flex-wrap items-center gap-1.5 border-b border-stone-200 pb-2.5"></div>
 
       <!-- Replies Table -->
-      <div id="report-table-wrap" class="overflow-x-auto"></div>
+      <div id="report-table-wrap" class="w-full max-w-full overflow-x-auto min-w-0"></div>
     </section>
 
   </main>
 
   <!-- ==================== IN-PAGE PDF VIEWER OVERLAY ==================== -->
-  <div id="pdf-viewer-overlay" class="hidden fixed inset-0 z-50 bg-[#2b2d30] flex flex-col w-screen h-[100dvh] overflow-hidden">
-    <div class="h-11 bg-[#1b1d1f]/95 text-white px-3 flex items-center justify-between gap-2 border-b border-white/10 shrink-0">
+  <div id="pdf-viewer-overlay" class="hidden fixed inset-0 z-50 bg-[#1c1e21] flex flex-col w-full max-w-full h-[100dvh] overflow-hidden">
+    <div class="min-h-[48px] bg-[#141a0d] text-white px-2.5 sm:px-4 py-1.5 flex items-center justify-between gap-2 border-b border-[#c9a227]/35 shrink-0 min-w-0">
       <div class="flex items-center gap-2 min-w-0 flex-1">
-        <button onclick="app.closeSubView()" class="px-2.5 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg shrink-0">✕ ปิด</button>
-        <span id="pdf-viewer-title" class="text-xs text-stone-300 truncate font-medium"></span>
+        <button onclick="app.closeSubView()" class="min-h-[36px] px-3 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg shrink-0">✕ ปิด</button>
+        <span id="pdf-viewer-title" class="text-xs sm:text-sm text-stone-200 truncate font-medium"></span>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
-        <span id="pdf-page-count" class="hidden sm:inline-block text-[11px] text-stone-300 bg-white/10 px-2 py-0.5 rounded font-mono"></span>
+        <span id="pdf-page-count" class="hidden sm:inline-block text-[11px] text-stone-300 bg-white/10 px-2 py-1 rounded font-mono-num"></span>
         <div class="flex items-center bg-white/10 rounded-lg p-0.5 text-xs">
-          <button onclick="app.zoomPdf(-0.2)" class="px-2 py-0.5 hover:bg-white/15 rounded text-stone-200">－</button>
-          <span id="pdf-zoom-label" class="text-[11px] px-1 font-mono text-amber-300">100%</span>
-          <button onclick="app.zoomPdf(0.2)" class="px-2 py-0.5 hover:bg-white/15 rounded text-stone-200">＋</button>
+          <button onclick="app.zoomPdf(-0.2)" class="min-w-[32px] min-h-[32px] hover:bg-white/15 rounded text-stone-200">－</button>
+          <span id="pdf-zoom-label" class="text-[11px] px-1.5 font-mono-num text-[#efd06b]">100%</span>
+          <button onclick="app.zoomPdf(0.2)" class="min-w-[32px] min-h-[32px] hover:bg-white/15 rounded text-stone-200">＋</button>
         </div>
-        <button onclick="app.downloadViewingPdf()" class="px-2.5 py-1 text-xs font-semibold text-[#1c220f] bg-[#c9a227] hover:bg-[#e0b734] rounded-lg">⬇ โหลดไฟล์</button>
+        <button onclick="app.downloadViewingPdf()" class="min-h-[36px] px-2.5 sm:px-3 py-1 text-xs font-semibold text-[#141a0b] bg-[#c9a227] hover:bg-[#deb73b] rounded-lg">ดาวน์โหลด</button>
       </div>
     </div>
-    <div id="pdf-pages-container" class="flex-1 overflow-auto flex flex-col items-center py-2 px-2 gap-2"></div>
+    <div id="pdf-pages-container" class="flex-1 overflow-auto flex flex-col items-center py-3 px-2.5 gap-3"></div>
   </div>
 
   <!-- ==================== REPLY MODAL ==================== -->
-  <div id="reply-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border-t-4 border-[#c9a227]">
-      <div class="bg-[#242d15] text-white px-5 py-4 flex items-center justify-between">
-        <h3 class="font-bold text-base sm:text-lg">✍ ตอบกลับหนังสือเวียนทราบ</h3>
-        <button onclick="app.closeReplyModal()" class="text-stone-300 hover:text-white p-1 rounded-lg hover:bg-white/10">✕</button>
+  <div id="reply-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-[#c9a227]/40 my-auto">
+      <div class="bg-[#1e2713] text-white px-5 py-4 flex items-center justify-between border-b border-[#c9a227]/40 sticky top-0 z-10">
+        <h3 class="font-bold text-sm sm:text-base">ตอบกลับหนังสือเวียนทราบ</h3>
+        <button onclick="app.closeReplyModal()" class="min-w-[36px] min-h-[36px] flex items-center justify-center text-stone-300 hover:text-white rounded-lg hover:bg-white/10">✕</button>
       </div>
-      <form onsubmit="app.handleReplySubmit(event)" class="p-5 sm:p-6 space-y-4">
-        <div id="reply-doc-banner" class="bg-stone-50 border border-stone-200 rounded-xl p-3.5"></div>
+      <form onsubmit="app.handleReplySubmit(event)" class="p-4 sm:p-6 space-y-4">
+        <div id="reply-doc-banner" class="bg-stone-100 border border-stone-200 rounded-xl p-3.5"></div>
         <div id="reply-error" class="hidden p-3 text-xs bg-red-50 text-red-700 border border-red-200 rounded-xl"></div>
 
         <div>
-          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1">ยศ-ชื่อ-สกุล และสังกัด <span class="text-red-500">*</span></label>
-          <input id="reply-name" type="text" required placeholder="ตัวอย่าง: พ.อ. สมชาย รักชาติ (กตพ.กพ.ทบ.)" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#46562a] text-sm bg-stone-50/50" />
+          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1.5">ยศ-ชื่อ-สกุล และสังกัด <span class="text-red-500">*</span></label>
+          <input id="reply-name" type="text" required placeholder="ตัวอย่าง: พ.อ. สมชาย รักชาติ (กตพ.กพ.ทบ.)" class="w-full h-11 px-3.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#3a4a21] text-sm bg-white" />
         </div>
 
         <div>
           <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-2">การตอบกลับ <span class="text-red-500">*</span></label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <label class="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer hover:bg-stone-50">
-              <input type="checkbox" name="reply-choice" value="รับทราบ" checked class="mt-0.5 w-4 h-4 accent-[#46562a]" />
+            <label class="flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-white cursor-pointer hover:bg-stone-50">
+              <input type="checkbox" name="reply-choice" value="รับทราบ" checked class="mt-0.5 w-4 h-4 accent-[#3a4a21]" />
               <div>
                 <div class="font-semibold text-xs sm:text-sm text-stone-900">รับทราบ</div>
                 <div class="text-[11px] text-stone-500">รับทราบข้อความและปฏิบัติตาม</div>
               </div>
             </label>
-            <label class="flex items-start gap-3 p-3 rounded-xl border border-stone-200 cursor-pointer hover:bg-stone-50">
-              <input type="checkbox" name="reply-choice" value="แจ้งความประสงค์" class="mt-0.5 w-4 h-4 accent-[#46562a]" />
+            <label class="flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-white cursor-pointer hover:bg-stone-50">
+              <input type="checkbox" name="reply-choice" value="แจ้งความประสงค์" class="mt-0.5 w-4 h-4 accent-[#3a4a21]" />
               <div>
                 <div class="font-semibold text-xs sm:text-sm text-stone-900">แจ้งความประสงค์</div>
                 <div class="text-[11px] text-stone-500">มีความประสงค์เข้าร่วม / แจ้งสิทธิ์</div>
@@ -290,81 +356,95 @@
         </div>
 
         <div>
-          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1">ความเห็น / ความประสงค์เพิ่มเติม (ถ้ามี)</label>
-          <textarea id="reply-comment" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติม หรือเบอร์โทรติดต่อ..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#46562a] text-sm bg-stone-50/50 resize-none"></textarea>
+          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1.5">ความเห็น / ความประสงค์เพิ่มเติม (ถ้ามี)</label>
+          <textarea id="reply-comment" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติม หรือเบอร์โทรติดต่อ..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-[#3a4a21] text-sm bg-white resize-none"></textarea>
         </div>
 
-        <div class="pt-2 flex items-center justify-end gap-2.5 border-t border-stone-100">
-          <button type="button" onclick="app.closeReplyModal()" class="px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-xl">ยกเลิก</button>
-          <button id="reply-submit-btn" type="submit" class="px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-[#3e4d22] hover:bg-[#4d6029] rounded-xl shadow-md disabled:opacity-50">ส่งการตอบกลับ</button>
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-stone-200">
+          <button type="button" onclick="app.closeReplyModal()" class="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-200/70 rounded-xl">ยกเลิก</button>
+          <button id="reply-submit-btn" type="submit" class="min-h-[42px] px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-xl shadow-md disabled:opacity-50">ส่งการตอบกลับ</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ==================== EDIT DOC MODAL ==================== -->
-  <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border-t-4 border-[#c9a227]">
-      <div class="bg-[#242d15] text-white px-5 py-4 flex items-center justify-between">
-        <h3 class="font-bold text-base sm:text-lg">✏ แก้ไขหนังสือเวียนทราบ</h3>
-        <button onclick="app.closeEditModal()" class="text-stone-300 hover:text-white p-1 rounded-lg hover:bg-white/10">✕</button>
+  <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-lg max-h-[92dvh] overflow-y-auto border border-[#c9a227]/40 my-auto">
+      <div class="bg-[#1e2713] text-white px-5 py-4 flex items-center justify-between border-b border-[#c9a227]/40 sticky top-0 z-10">
+        <h3 class="font-bold text-sm sm:text-base">แก้ไขหนังสือเวียนทราบ</h3>
+        <button onclick="app.closeEditModal()" class="min-w-[36px] min-h-[36px] flex items-center justify-center text-stone-300 hover:text-white rounded-lg hover:bg-white/10">✕</button>
       </div>
-      <form onsubmit="app.handleEditSubmit(event)" class="p-5 sm:p-6 space-y-4">
+      <form onsubmit="app.handleEditSubmit(event)" class="p-4 sm:p-6 space-y-4">
         <div id="edit-error" class="hidden p-3 text-xs bg-red-50 text-red-700 border border-red-200 rounded-xl"></div>
         <div>
-          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1">ชื่อเรื่อง <span class="text-red-500">*</span></label>
-          <input id="edit-title" type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm" />
+          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1.5">ชื่อเรื่อง <span class="text-red-500">*</span></label>
+          <input id="edit-title" type="text" required class="w-full h-11 px-3.5 rounded-xl border border-stone-300 bg-white text-sm" />
         </div>
         <div>
-          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1">รายละเอียด / หมายเหตุ</label>
-          <textarea id="edit-desc" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm resize-none"></textarea>
+          <label class="block text-xs sm:text-sm font-semibold text-stone-700 mb-1.5">รายละเอียด / หมายเหตุ</label>
+          <textarea id="edit-desc" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white text-sm resize-none"></textarea>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="flex items-center gap-2 p-3 rounded-xl border border-stone-200 bg-stone-50 cursor-pointer">
-            <input id="edit-noreply" type="checkbox" onchange="app.toggleEditDeadlineField()" class="w-4 h-4 accent-[#46562a]" />
-            <span class="text-xs font-medium text-stone-800">📌 เรื่องเพื่อทราบ</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+          <label class="flex items-center gap-2.5 p-3 rounded-xl border border-stone-200 bg-white cursor-pointer min-h-[44px]">
+            <input id="edit-noreply" type="checkbox" onchange="app.toggleEditDeadlineField()" class="w-4 h-4 accent-[#3a4a21]" />
+            <span class="text-xs font-medium text-stone-800">เรื่องเพื่อทราบเท่านั้น</span>
           </label>
-          <div>
+          <div class="min-w-0">
             <label class="block text-xs font-semibold text-stone-700 mb-1">สถานะการเปิดรับ</label>
-            <select id="edit-status" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs sm:text-sm bg-white">
-              <option value="open">🟢 เปิดรับการตอบกลับ</option>
-              <option value="closed">🔴 ปิดรับการตอบกลับ</option>
+            <select id="edit-status" class="w-full h-11 px-3 rounded-xl border border-stone-300 text-xs sm:text-sm bg-white">
+              <option value="open">เปิดรับการตอบกลับ</option>
+              <option value="closed">ปิดรับการตอบกลับ</option>
             </select>
           </div>
         </div>
-        <div id="edit-deadline-wrap">
-          <label class="block text-xs font-semibold text-stone-700 mb-1">กำหนดตอบกลับ</label>
-          <input id="edit-deadline" type="datetime-local" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm" />
+        <div id="edit-deadline-wrap" class="min-w-0">
+          <label class="block text-xs font-semibold text-stone-700 mb-1.5">กำหนดตอบกลับ</label>
+          <input id="edit-deadline" type="datetime-local" class="w-full h-11 px-3 rounded-xl border border-stone-300 bg-white text-xs sm:text-sm" />
         </div>
-        <div>
-          <label class="block text-xs font-semibold text-stone-700 mb-1">เปลี่ยนไฟล์แนบใหม่ (เฉพาะไฟล์ PDF เท่านั้น)</label>
-          <input id="edit-file" type="file" accept=".pdf,application/pdf" onchange="app.handleEditFileChange(this)" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-700 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#46562a] file:text-white cursor-pointer" />
-          <div id="edit-current-file" class="mt-2 flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-stone-50 px-3 py-2 rounded-xl border border-stone-200"></div>
+        <div class="min-w-0">
+          <label class="block text-xs font-semibold text-stone-700 mb-1.5">เปลี่ยนไฟล์แนบใหม่ (เฉพาะไฟล์ PDF)</label>
+          <input id="edit-file" type="file" accept=".pdf,application/pdf" onchange="app.handleEditFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
+          <div id="edit-current-file" class="mt-2 flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200 min-w-0 overflow-hidden"></div>
         </div>
-        <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
-          <button type="button" onclick="app.closeEditModal()" class="px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-xl">ยกเลิก</button>
-          <button id="edit-submit-btn" type="submit" class="px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-[#46562a] hover:bg-[#38461f] rounded-xl shadow-md disabled:opacity-50">บันทึกการแก้ไข</button>
+        <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-200">
+          <button type="button" onclick="app.closeEditModal()" class="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-200/70 rounded-xl">ยกเลิก</button>
+          <button id="edit-submit-btn" type="submit" class="min-h-[42px] px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-xl shadow-md disabled:opacity-50">บันทึกการแก้ไข</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ==================== DELETE CONFIRM MODAL ==================== -->
-  <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border-t-4 border-red-600 space-y-4">
+  <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 border-t-4 border-red-600 space-y-4">
       <h3 id="confirm-title" class="text-base font-bold text-stone-900"></h3>
-      <p id="confirm-desc" class="text-xs text-stone-600 leading-relaxed"></p>
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
-        <button onclick="app.closeConfirmModal()" class="px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl">ยกเลิก</button>
-        <button id="confirm-ok-btn" class="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md">ยืนยัน</button>
+      <p id="confirm-desc" class="text-xs sm:text-sm text-stone-600 leading-relaxed"></p>
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-stone-200">
+        <button onclick="app.closeConfirmModal()" class="min-h-[42px] px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-200/80 hover:bg-stone-200 rounded-xl">ยกเลิก</button>
+        <button id="confirm-ok-btn" class="min-h-[42px] px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md">ยืนยัน</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== TOAST NOTIFICATION ==================== -->
-  <div id="toast-box" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold border transition-all"></div>
+  <!-- ==================== SUCCESS POPUP MODAL ==================== -->
+  <div id="success-modal" onclick="if(event.target===this) app.closeSuccessModal()" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-emerald-600 text-center space-y-4">
+      <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl border border-emerald-200">✓</div>
+      <div>
+        <h3 id="success-modal-title" class="text-lg font-bold text-stone-900">บันทึกสำเร็จ</h3>
+        <p id="success-modal-desc" class="text-xs sm:text-sm text-stone-600 mt-1.5 leading-relaxed"></p>
+      </div>
+      <button type="button" onclick="app.closeSuccessModal()" class="w-full min-h-[44px] py-2.5 px-4 text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-xl shadow-md transition-all">
+        ตกลง
+      </button>
+    </div>
+  </div>
 
-  <footer class="text-center text-xs text-amber-200/70 mt-auto py-4">
+  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <div id="toast-box" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-24px)] w-max text-center px-4 py-2.5 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold border transition-all"></div>
+
+  <footer class="text-center text-xs text-stone-400 mt-auto py-4 px-3 border-t border-white/10 bg-[#12180b]/60">
     กองการเตรียมพล กรมกำลังพลทหารบก · ระบบหนังสือเวียนทราบ
   </footer>
 
@@ -379,13 +459,23 @@
     }
 
     const CONFIG = {
-      ADMIN_PIN: '1234',
+      ADMIN_PIN_HASH: 'fdc422fd',
       DEFAULT_DEADLINE_MS: 7 * 24 * 60 * 60 * 1000,
       STORAGE_MY_REPLIED_KEY: 'circular_sys_my_replied_v1',
       STORAGE_RESPONDER_KEY: 'circular_sys_responder_name',
       IDB_NAME: 'CircularPdfCacheV1',
       IDB_STORE: 'pdfs',
     };
+
+    function verifyAdminPinValue(input) {
+      const s = String(input || '').trim();
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0).toString(16) === CONFIG.ADMIN_PIN_HASH;
+    }
 
     const isGasEmbedded = () =>
       typeof google !== 'undefined' && google.script && google.script.run;
@@ -508,37 +598,92 @@
       return local.toISOString().slice(0, 16);
     }
 
-    function base64ToUint8(base64) {
+    function uint8ToBase64Fast(bytes) {
+      let binary = '';
+      const step = 0x8000;
+      for (let i = 0; i < bytes.length; i += step) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + step, bytes.length)));
+      }
+      return btoa(binary);
+    }
+
+    async function base64ToUint8Fast(base64) {
       const clean = base64.includes(',') ? base64.split(',')[1] : base64;
-      const binary = atob(clean);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return bytes;
+      try {
+        const res = await fetch('data:application/pdf;base64,' + clean);
+        return new Uint8Array(await res.arrayBuffer());
+      } catch {
+        const binary = atob(clean);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return bytes;
+      }
     }
 
     async function uploadFileInChunks(docId, file, onProgress) {
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
-      const CHUNK_SIZE = 524288; // 512 KB
-      const totalChunks = Math.ceil(bytes.length / CHUNK_SIZE);
-      let lastRes = null;
+      const CHUNK_SIZE = isGasEmbedded() ? 1572864 : 3145728; // 3 MB ต่อรอบ (ลดจำนวนรอบลง 6 เท่า)
+      const totalChunks = Math.max(1, Math.ceil(bytes.length / CHUNK_SIZE));
+      let completedCount = 0;
 
-      for (let i = 0; i < totalChunks; i++) {
-        if (onProgress) onProgress(i + 1, totalChunks);
-        const slice = bytes.subarray(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, bytes.length));
-        let binary = '';
-        for (let j = 0; j < slice.length; j++) binary += String.fromCharCode(slice[j]);
-        const chunkBase64 = btoa(binary);
-        lastRes = await callBackend('uploadChunk', {
+      const sendChunk = async (idx) => {
+        const slice = bytes.subarray(idx * CHUNK_SIZE, Math.min((idx + 1) * CHUNK_SIZE, bytes.length));
+        const chunkBase64 = uint8ToBase64Fast(slice);
+        const res = await callBackend('uploadChunk', {
           docId,
-          index: i,
+          index: idx,
           total: totalChunks,
           chunkBase64,
           fileName: file.name,
           mimeType: file.type || 'application/pdf'
         });
+        completedCount += 1;
+        if (onProgress) onProgress(completedCount, totalChunks);
+        return res;
+      };
+
+      if (onProgress) onProgress(0, totalChunks);
+
+      // อัปโหลดชิ้นที่ 0 ถึง totalChunks-2 แบบขนาน (สูงสุดครั้งละ 3 ชิ้น) แล้วค่อยส่งชิ้นสุดท้ายเพื่อรวมไฟล์
+      if (totalChunks > 1) {
+        const preIndices = [];
+        for (let i = 0; i < totalChunks - 1; i++) preIndices.push(i);
+        const CONCURRENCY = 3;
+        for (let start = 0; start < preIndices.length; start += CONCURRENCY) {
+          await Promise.all(preIndices.slice(start, start + CONCURRENCY).map(sendChunk));
+        }
       }
+
+      const lastRes = await sendChunk(totalChunks - 1);
       return { bytes, lastRes };
+    }
+
+    // ==================== FAST PDF CACHE & SHARED WORKER ====================
+    const pdfMemCache = new Map();    // docId -> Uint8Array (0ms hit)
+    const pdfProxyCache = new Map();  // docId -> PDFDocumentProxy (skip re-parsing)
+    const pdfInFlight = new Map();    // docId -> Promise<Uint8Array|null> (dedup concurrent fetches)
+    let sharedPdfWorker = null;
+
+    function getSharedPdfWorker() {
+      if (!sharedPdfWorker && window.pdfjsLib && pdfjsLib.PDFWorker) {
+        try {
+          sharedPdfWorker = new pdfjsLib.PDFWorker({ name: 'circular-pdf-worker' });
+        } catch {
+          sharedPdfWorker = null;
+        }
+      }
+      return sharedPdfWorker;
+    }
+
+    function invalidatePdfCache(docId) {
+      pdfMemCache.delete(docId);
+      const cachedProxy = pdfProxyCache.get(docId);
+      if (cachedProxy && typeof cachedProxy.destroy === 'function') {
+        try { cachedProxy.destroy(); } catch {}
+      }
+      pdfProxyCache.delete(docId);
+      pdfInFlight.delete(docId);
     }
 
     // ==================== MAIN APP CONTROLLER ====================
@@ -555,6 +700,8 @@
         viewingPdfBytes: null,
         pdfScale: 1,
         pdfProxy: null,
+        pdfObserver: null,
+        pdfRenderToken: 0,
         replyDocId: null,
         editDocId: null,
         editRemoveFile: false,
@@ -573,6 +720,9 @@
           })()
         );
 
+        // Pre-warm PDF.js Web Worker early so first PDF opens without worker boot lag
+        setTimeout(() => getSharedPdfWorker(), 80);
+
         this.loadData();
 
         setInterval(() => {
@@ -581,6 +731,10 @@
 
         window.addEventListener('keydown', (e) => {
           if (e.key === 'Escape') {
+            if (!document.getElementById('success-modal').classList.contains('hidden')) {
+              this.closeSuccessModal();
+              return;
+            }
             if (!document.getElementById('pdf-viewer-overlay').classList.contains('hidden')) {
               this.closeSubView();
             }
@@ -599,6 +753,7 @@
             this.state.replies = res.replies || [];
             this.state.hasLoadedOnce = true;
             this.renderAll();
+            this.prefetchRecentPdfs();
           }
         } catch (err) {
           console.error(err);
@@ -632,8 +787,8 @@
 
         const readerBtn = document.getElementById('tab-btn-reader');
         const adminBtn = document.getElementById('tab-btn-admin');
-        const activeCls = 'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-[#c9a227] text-[#1c220f] shadow-md';
-        const idleCls = 'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-stone-300 hover:text-white hover:bg-white/5';
+        const activeCls = 'min-h-[40px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap';
+        const idleCls = 'min-h-[40px] sm:min-h-[36px] flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-stone-300 hover:text-white hover:bg-white/5 whitespace-nowrap';
 
         if (tab === 'reader') {
           readerBtn.className = activeCls;
@@ -659,6 +814,11 @@
       },
 
       closeSubView(restoreScroll = true) {
+        if (this.state.pdfObserver) {
+          this.state.pdfObserver.disconnect();
+          this.state.pdfObserver = null;
+        }
+        this.state.pdfRenderToken += 1;
         document.getElementById('pdf-viewer-overlay').classList.add('hidden');
         document.getElementById('view-report').classList.add('hidden');
         this.state.viewingPdfDoc = null;
@@ -691,7 +851,7 @@
       handleAdminPinTyping(val) {
         const errEl = document.getElementById('admin-pin-error');
         errEl.classList.add('hidden');
-        if (val.trim() === CONFIG.ADMIN_PIN) {
+        if (verifyAdminPinValue(val)) {
           this.state.adminUnlocked = true;
           document.getElementById('admin-pin-input').value = '';
           this.updateVisibleSections();
@@ -702,8 +862,8 @@
 
       handleAdminLoginSubmit(e) {
         e.preventDefault();
-        const val = document.getElementById('admin-pin-input').value.trim();
-        if (val === CONFIG.ADMIN_PIN) {
+        const val = document.getElementById('admin-pin-input').value;
+        if (verifyAdminPinValue(val)) {
           this.handleAdminPinTyping(val);
         } else {
           const errEl = document.getElementById('admin-pin-error');
@@ -724,8 +884,8 @@
         document.querySelectorAll('.filter-pill').forEach((btn) => {
           const isAct = btn.getAttribute('data-filter') === f;
           btn.className = isAct
-            ? 'filter-pill px-1.5 sm:px-4 py-2 rounded-xl text-[11px] sm:text-sm font-bold bg-[#c9a227] text-[#1c220f] shadow whitespace-nowrap truncate'
-            : 'filter-pill px-1.5 sm:px-4 py-2 rounded-xl text-[11px] sm:text-sm font-semibold bg-[#1e2610] text-stone-200 hover:bg-[#34421b] border border-white/10 whitespace-nowrap truncate';
+            ? 'filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#c9a227] text-[#141a0b] shadow-sm whitespace-nowrap truncate transition-all'
+            : 'filter-pill min-h-[40px] px-2.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#141b0c] text-stone-200 hover:bg-[#2a371a] border border-white/10 whitespace-nowrap truncate transition-all';
         });
         this.renderReaderList();
       },
@@ -739,16 +899,16 @@
 
       getCountdownInfo(doc, now = Date.now()) {
         if (doc.noReply) return null;
-        if (doc.status !== 'open') return { text: '🔒 ปิดรับการตอบกลับแล้ว', closed: true, urgent: false };
+        if (doc.status !== 'open') return { text: 'ปิดรับการตอบกลับแล้ว', closed: true, urgent: false };
         const diff = (Number(doc.deadline) || 0) - now;
-        if (diff <= 0) return { text: '⛔ หมดเวลาตอบกลับ', closed: true, urgent: false };
+        if (diff <= 0) return { text: 'หมดเวลาตอบกลับ', closed: true, urgent: false };
         const d = Math.floor(diff / 86400000);
         const h = Math.floor((diff % 86400000) / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
         const s = Math.floor((diff % 60000) / 1000);
         const pad = (n) => String(n).padStart(2, '0');
         return {
-          text: `⏳ เหลือเวลา ${d > 0 ? d + ' วัน ' : ''}${pad(h)}:${pad(m)}:${pad(s)}`,
+          text: `เหลือเวลา ${d > 0 ? d + ' วัน ' : ''}${pad(h)}:${pad(m)}:${pad(s)}`,
           closed: false,
           urgent: diff < 86400000,
         };
@@ -762,12 +922,12 @@
           const info = this.getCountdownInfo(doc, now);
           if (!info) continue;
           el.textContent = info.text;
-          el.className = `inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold font-mono tabular-nums ${
+          el.className = `inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
             info.closed
-              ? 'bg-red-100 text-red-700 border border-red-200'
+              ? 'bg-red-50 text-red-700 border border-red-200'
               : info.urgent
-              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-              : 'bg-[#e9eed9] text-[#2b3519] border border-[#d2dcc0]'
+              ? 'bg-amber-50 text-amber-800 border border-amber-300'
+              : 'bg-[#edf2e0] text-[#283416] border border-[#cad5b2]'
           }`;
         }
       },
@@ -806,10 +966,12 @@
 
         if (filtered.length === 0) {
           container.innerHTML = `
-            <div class="bg-white/95 rounded-2xl p-8 text-center border border-stone-200 shadow-md">
-              <div class="text-4xl mb-2">📄</div>
-              <h3 class="text-base font-semibold text-stone-700">ไม่พบหนังสือเวียนทราบที่ตรงตามเงื่อนไข</h3>
-              <p class="text-xs text-stone-500 mt-1">ลองเพิ่มเอกสารในแท็บผู้ดูแลระบบ หรือล้างตัวกรอง</p>
+            <div class="bg-[#fafaf7] rounded-2xl p-8 text-center border border-[#cfd6bf] shadow-md">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-[#edf2e0] text-[#3a4a21] flex items-center justify-center">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <h3 class="text-sm sm:text-base font-semibold text-stone-800">ไม่พบหนังสือเวียนทราบที่ตรงตามเงื่อนไข</h3>
+              <p class="text-xs text-stone-500 mt-1">ลองปรับคำค้นหาหรือล้างตัวกรองเพื่อดูรายการทั้งหมด</p>
             </div>`;
           return;
         }
@@ -822,68 +984,69 @@
             const hasFile = Boolean(d.driveFileId || d.fileName);
             const isActive = this.state.activeDocId === d.id;
 
-            let badge = `<span class="px-2.5 py-1 text-xs font-semibold bg-stone-100 text-stone-500 rounded-full border border-stone-200">ปิดรับ</span>`;
+            let statusTag = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-stone-100 text-stone-600 rounded-md border border-stone-200"><span class="w-1.5 h-1.5 rounded-full bg-stone-400"></span>ปิดรับ</span>`;
             if (d.noReply) {
-              badge = `<span class="px-2.5 py-1 text-xs font-semibold bg-stone-100 text-stone-600 rounded-full border border-stone-200">📌 เพื่อทราบ</span>`;
+              statusTag = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-[#eef2e3] text-[#2d3a18] rounded-md border border-[#cad5b2]"><span class="w-1.5 h-1.5 rounded-full bg-[#46562a]"></span>เพื่อทราบ</span>`;
             } else if (replied) {
-              badge = `<span class="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">✅ ตอบแล้ว</span>`;
+              statusTag = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>ตอบแล้ว</span>`;
             } else if (isOpen) {
-              badge = `<span class="px-2.5 py-1 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full border border-amber-300">✍ รอตอบกลับ</span>`;
+              statusTag = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-amber-50 text-amber-800 rounded-md border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>รอตอบกลับ</span>`;
             }
 
             return `
-              <article id="reader-card-${escHtml(d.id)}" class="rounded-2xl p-4 sm:p-5 border-l-8 border-l-[#c9a227] border shadow-md transition-all ${
-                isActive ? 'bg-[#fcfaf2] border-[#c9a227] ring-2 ring-[#c9a227]/60' : 'bg-white/95 border-stone-200'
+              <article id="reader-card-${escHtml(d.id)}" class="rounded-2xl p-4 sm:p-5 border shadow-md transition-all min-w-0 ${
+                isActive ? 'bg-[#fcfaf0] border-[#c9a227] ring-2 ring-[#c9a227]/40' : 'bg-[#fafaf7] border-[#cfd6bf]'
               }">
-                <div class="flex items-start justify-between gap-2.5">
-                  <h3 class="font-bold text-base sm:text-lg text-stone-900 leading-snug break-words flex-1">${escHtml(d.title)}</h3>
-                  <div class="shrink-0">${badge}</div>
+                <div class="flex items-start justify-between gap-2.5 min-w-0">
+                  <h3 class="font-bold text-sm sm:text-base text-stone-900 leading-snug break-words min-w-0 flex-1">${escHtml(d.title)}</h3>
+                  <div class="shrink-0">${statusTag}</div>
                 </div>
-                ${d.description ? `<p class="text-stone-600 text-xs sm:text-sm mt-2 line-clamp-2">${escHtml(d.description)}</p>` : ''}
+                ${d.description ? `<p class="text-stone-600 text-xs sm:text-sm mt-2 line-clamp-2 break-words">${escHtml(d.description)}</p>` : ''}
 
-                <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500 font-medium">
-                  <span>📅 ประกาศเมื่อ: ${fmtDate(d.createdAt)}</span>
-                  ${!d.noReply && Number(d.deadline) > 0 ? `<span class="text-amber-800 font-semibold">🕒 กำหนดตอบ: ${fmtDateTime(d.deadline)}</span>` : ''}
-                  ${!d.noReply ? `<span class="bg-stone-100 text-stone-700 px-2 py-0.5 rounded-md text-[11px]">ตอบแล้ว ${d.replyCount || 0} คน</span>` : ''}
+                <div class="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-stone-500 font-medium tabular-nums">
+                  <span>ประกาศ ${fmtDate(d.createdAt)}</span>
+                  ${!d.noReply && Number(d.deadline) > 0 ? `<span class="text-stone-300">·</span><span class="text-amber-800 font-semibold">กำหนดตอบ ${fmtDateTime(d.deadline)}</span>` : ''}
+                  ${!d.noReply ? `<span class="text-stone-300">·</span><span class="text-stone-700 font-semibold">ตอบแล้ว ${d.replyCount || 0} คน</span>` : ''}
                 </div>
 
                 ${
                   cd
-                    ? `<div class="mt-3"><span id="cd-${escHtml(d.id)}" class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold font-mono tabular-nums ${
+                    ? `<div class="mt-3"><span id="cd-${escHtml(d.id)}" class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
                         cd.closed
-                          ? 'bg-red-100 text-red-700 border border-red-200'
+                          ? 'bg-red-50 text-red-700 border border-red-200'
                           : cd.urgent
-                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                          : 'bg-[#e9eed9] text-[#2b3519] border border-[#d2dcc0]'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                          : 'bg-[#edf2e0] text-[#283416] border border-[#cad5b2]'
                       }">${cd.text}</span></div>`
                     : ''
                 }
 
-                <div class="mt-4 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
-                  <div class="flex items-center gap-2 flex-wrap">
+                <div class="mt-4 pt-3 border-t border-stone-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div class="flex flex-wrap items-center gap-2 min-w-0">
                     ${
                       hasFile
-                        ? `<button onclick="app.openPdfViewer('${escHtml(d.id)}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#2b3519] bg-[#eef2e1] hover:bg-[#dfe6cb] border border-[#c4d0a9] rounded-xl shadow-sm">
-                             <span>👁 เปิดอ่านทันที</span>
-                             <span class="px-2 py-0.5 text-[11px] font-bold bg-[#46562a] text-white rounded-full">เปิดอ่านแล้ว ${d.viewCount || 0} คน</span>
+                        ? `<button onclick="app.openPdfViewer('${escHtml(d.id)}')" onmouseenter="app.prefetchPdf('${escHtml(d.id)}')" ontouchstart="app.prefetchPdf('${escHtml(d.id)}')" class="min-h-[42px] inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#1e2713] bg-[#edf2e0] hover:bg-[#dfe8cb] border border-[#c3cfab] rounded-xl shadow-sm transition-colors">
+                             <svg class="w-4 h-4 text-[#3a4a21] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                             <span>เปิดอ่านทันที</span>
+                             <span class="px-1.5 py-0.5 text-[11px] font-bold bg-[#2e3b19] text-[#f3df92] rounded-md tabular-nums">${d.viewCount || 0}</span>
                            </button>
                            ${
                              d.driveFileId
-                               ? `<a href="https://drive.google.com/uc?export=download&id=${encodeURIComponent(d.driveFileId)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-xl">
+                               ? `<a href="https://drive.google.com/uc?export=download&id=${encodeURIComponent(d.driveFileId)}" target="_blank" rel="noopener noreferrer" class="min-h-[42px] inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors">
                                     <span>⬇ ดาวน์โหลด</span>
                                   </a>`
-                               : `<button onclick="app.downloadDocFile('${escHtml(d.id)}')" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-200 rounded-xl">
+                               : `<button onclick="app.downloadDocFile('${escHtml(d.id)}')" class="min-h-[42px] inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl transition-colors">
                                     <span>⬇ ดาวน์โหลด</span>
                                   </button>`
                            }`
-                        : `<span class="px-2.5 py-1.5 bg-stone-100 border border-stone-200 rounded-xl text-xs text-stone-500">ไม่มีไฟล์แนบ</span>`
+                        : `<span class="inline-flex items-center min-h-[38px] px-3 py-1.5 bg-stone-100 border border-stone-200 rounded-xl text-xs text-stone-500">ไม่มีไฟล์แนบ</span>`
                     }
                   </div>
                   ${
                     !d.noReply
-                      ? `<button onclick="app.openReplyModal('${escHtml(d.id)}')" ${isOpen ? '' : 'disabled'} class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl shadow-sm ${
-                          isOpen ? 'bg-[#46562a] hover:bg-[#38461f] text-white' : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                        }">${replied ? '✏ แก้ไขการตอบกลับ' : '✍ ตอบกลับ'}</button>`
+                      ? `<button onclick="app.openReplyModal('${escHtml(d.id)}')" ${isOpen ? '' : 'disabled'} class="w-full sm:w-auto min-h-[42px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all ${
+                          isOpen ? 'bg-[#2e3b19] hover:bg-[#232d12] text-white border border-[#c9a227]/35' : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                        }">${replied ? 'แก้ไขการตอบกลับ' : 'ตอบกลับหนังสือ'}</button>`
                       : ''
                   }
                 </div>
@@ -911,8 +1074,8 @@
           this.showAdminMsg('อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น', 'err');
           return;
         }
-        info.innerHTML = `<span class="truncate">✅ พร้อมอัปโหลด: ${escHtml(f.name)} (${(f.size / 1048576).toFixed(2)} MB)</span>
-          <button type="button" onclick="app.clearAddFile()" class="px-2 py-0.5 bg-red-100 text-red-700 rounded-md font-semibold">✕ เอาไฟล์ออก</button>`;
+        info.innerHTML = `<span class="truncate min-w-0 flex-1">พร้อมอัปโหลด: ${escHtml(f.name)} (${(f.size / 1048576).toFixed(2)} MB)</span>
+          <button type="button" onclick="app.clearAddFile()" class="px-2 py-1 bg-red-100 text-red-700 rounded-lg font-semibold shrink-0">เอาออก</button>`;
         info.classList.remove('hidden');
       },
 
@@ -978,8 +1141,10 @@
 
           if (file) {
             const { bytes, lastRes } = await uploadFileInChunks(docId, file, (curr, total) => {
-              this.showAdminMsg(`กำลังอัปโหลดไฟล์แนบขึ้น Google Drive (${curr}/${total})...`, 'info');
+              const pct = total > 0 ? Math.round((curr / total) * 100) : 0;
+              this.showAdminMsg(`กำลังอัปโหลดไฟล์แนบขึ้น Google Drive (${curr}/${total} — ${pct}%)...`, 'info');
             });
+            pdfMemCache.set(docId, bytes);
             await pdfIdb.save(docId, bytes).catch(() => {});
             if (lastRes && lastRes.completed && !lastRes.driveFileId) {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive (กรุณาอัปเดต Code.gs)');
@@ -992,8 +1157,13 @@
           this.toggleAddDeadlineField();
           document.getElementById('add-deadline').value = toDatetimeLocalValue(Date.now() + CONFIG.DEFAULT_DEADLINE_MS);
 
-          this.showAdminMsg('เผยแพร่หนังสือเวียนทราบเรียบร้อยแล้ว', 'ok');
-          this.showToast('เผยแพร่หนังสือเวียนทราบเรียบร้อย', 'success');
+          document.getElementById('admin-status-msg').classList.add('hidden');
+          this.showSuccessModal(
+            'บันทึกสำเร็จ',
+            file
+              ? `เผยแพร่เรื่อง "${title}" และอัปโหลดไฟล์แนบขึ้น Google Drive เรียบร้อยแล้ว`
+              : `เผยแพร่หนังสือเวียนทราบเรื่อง "${title}" เรียบร้อยแล้ว`
+          );
           await this.loadData();
         } catch (err) {
           if (docSaved) {
@@ -1008,11 +1178,65 @@
 
       renderAdminTable() {
         const tbody = document.getElementById('admin-docs-tbody');
+        const mobileList = document.getElementById('admin-docs-mobile');
         document.getElementById('admin-doc-count').textContent = this.state.docs.length;
 
         if (this.state.docs.length === 0) {
           tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-stone-400 text-xs">ยังไม่มีรายการหนังสือเวียนทราบ</td></tr>`;
+          if (mobileList) {
+            mobileList.innerHTML = `<div class="py-8 px-4 text-center text-stone-400 text-xs">ยังไม่มีรายการหนังสือเวียนทราบ</div>`;
+          }
           return;
+        }
+
+        if (mobileList) {
+          mobileList.innerHTML = this.state.docs
+            .map((d) => {
+              const hasFile = Boolean(d.driveFileId || d.fileName);
+              const isActive = this.state.activeDocId === d.id;
+              const statusHtml = d.noReply
+                ? '<span class="px-2 py-0.5 text-[11px] font-medium rounded-md bg-stone-100 text-stone-600 border border-stone-200">เพื่อทราบ</span>'
+                : d.status === 'open'
+                ? '<span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">เปิดรับ</span>'
+                : '<span class="px-2 py-0.5 text-[11px] font-medium rounded-md bg-stone-100 text-stone-500 border border-stone-200">ปิดรับ</span>';
+
+              return `
+                <div class="p-4 space-y-2.5 min-w-0 ${isActive ? 'bg-[#f4f7ec]' : 'bg-[#fafaf7]'}">
+                  <div class="flex items-start justify-between gap-2 min-w-0">
+                    <div class="font-semibold text-sm text-stone-900 break-words min-w-0 flex-1">${escHtml(d.title)}</div>
+                    <div class="shrink-0">${statusHtml}</div>
+                  </div>
+                  <div class="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1 tabular-nums">
+                    <span>ประกาศ ${fmtDate(d.createdAt)}</span>
+                    <span>·</span>
+                    <span>เปิดอ่าน ${d.viewCount || 0}</span>
+                    ${!d.noReply ? `<span>·</span><span>ตอบแล้ว ${d.replyCount || 0} คน</span>` : ''}
+                  </div>
+                  ${!d.noReply && Number(d.deadline) > 0 ? `<div class="text-xs text-amber-800 font-medium tabular-nums">กำหนดตอบ: ${fmtDateTime(d.deadline)}</div>` : ''}
+                  <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                    ${
+                      hasFile
+                        ? `<span class="max-w-full truncate text-stone-700 bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200">${escHtml(d.fileName || 'ไฟล์ PDF')}${!d.driveFileId ? ' (ยังไม่พบใน Drive)' : ''}</span>
+                           <button onclick="app.openPdfViewer('${escHtml(d.id)}')" onmouseenter="app.prefetchPdf('${escHtml(d.id)}')" ontouchstart="app.prefetchPdf('${escHtml(d.id)}')" class="min-h-[34px] px-2.5 py-1 bg-[#edf2e0] text-[#283416] border border-[#cad5b2] rounded-lg font-semibold">ดูไฟล์</button>
+                           <button onclick="app.confirmDeleteFile('${escHtml(d.id)}')" class="min-h-[34px] px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 rounded-lg font-semibold">ลบไฟล์</button>`
+                        : `<button onclick="app.openEditModal('${escHtml(d.id)}')" class="min-h-[34px] px-2.5 py-1 bg-stone-100 text-[#2e3b19] border border-stone-200 rounded-lg font-semibold">+ แนบไฟล์ PDF</button>`
+                    }
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 pt-1">
+                    ${!d.noReply ? `<button onclick="app.openReportView('${escHtml(d.id)}')" class="min-h-[40px] px-3 py-1.5 text-xs font-semibold text-white bg-[#2e3b19] rounded-xl">รายงานตอบกลับ</button>` : ''}
+                    <button onclick="app.openEditModal('${escHtml(d.id)}')" class="min-h-[40px] px-3 py-1.5 text-xs font-semibold bg-white border border-stone-300 text-stone-700 rounded-xl">แก้ไข</button>
+                    ${
+                      !d.noReply
+                        ? `<button onclick="app.toggleDocStatus('${escHtml(d.id)}')" class="min-h-[40px] px-3 py-1.5 text-xs font-semibold rounded-xl border ${
+                            d.status === 'open' ? 'text-amber-800 bg-amber-50 border-amber-200' : 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                          }">${d.status === 'open' ? 'ปิดรับคำตอบ' : 'เปิดรับคำตอบ'}</button>`
+                        : ''
+                    }
+                    <button onclick="app.confirmDeleteDoc('${escHtml(d.id)}')" class="min-h-[40px] px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl ${d.noReply ? '' : ''}">ลบเรื่อง</button>
+                  </div>
+                </div>`;
+            })
+            .join('');
         }
 
         tbody.innerHTML = this.state.docs
@@ -1021,46 +1245,46 @@
             const isActive = this.state.activeDocId === d.id;
 
             return `
-              <tr id="admin-row-${escHtml(d.id)}" class="${isActive ? 'bg-[#f8faef]' : 'hover:bg-stone-50'}">
-                <td class="py-3 px-3">
+              <tr id="admin-row-${escHtml(d.id)}" class="${isActive ? 'bg-[#f4f7ec]' : 'hover:bg-stone-50'}">
+                <td class="py-3.5 px-4">
                   <div class="font-semibold text-stone-900">${escHtml(d.title)}</div>
-                  <div class="text-[11px] text-stone-500 mt-0.5 flex flex-wrap items-center gap-2">
+                  <div class="text-[11px] text-stone-500 mt-1 flex flex-wrap items-center gap-2 tabular-nums">
                     <span>ประกาศ: ${fmtDate(d.createdAt)}</span>
-                    <span class="text-[#46562a] bg-[#eef2e1] px-2 py-0.5 rounded-full font-semibold">เปิดอ่านแล้ว ${d.viewCount || 0} คน</span>
+                    <span class="text-[#283416] bg-[#edf2e0] px-2 py-0.5 rounded-md font-semibold">เปิดอ่าน ${d.viewCount || 0} คน</span>
                     ${
                       hasFile
-                        ? `<span class="text-stone-700 bg-stone-100 px-2 py-0.5 rounded-md font-medium">📎 ${escHtml(d.fileName || 'ไฟล์ PDF')}${!d.driveFileId ? ' <span class="text-amber-700">(ยังไม่พบใน Drive)</span>' : ''}</span>
-                           <button onclick="app.openPdfViewer('${escHtml(d.id)}')" class="text-[#46562a] hover:underline font-semibold">👁 ดูไฟล์แนบ</button>
-                           <button onclick="app.confirmDeleteFile('${escHtml(d.id)}')" class="px-2 py-0.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-md font-semibold">🗑 ลบไฟล์แนบ</button>`
-                        : `<button onclick="app.openEditModal('${escHtml(d.id)}')" class="text-[#46562a] hover:underline font-medium">➕ แนบไฟล์ PDF</button>`
+                        ? `<span class="text-stone-700 bg-stone-100 px-2 py-0.5 rounded-md font-medium">${escHtml(d.fileName || 'ไฟล์ PDF')}${!d.driveFileId ? ' <span class="text-amber-700">(ยังไม่พบใน Drive)</span>' : ''}</span>
+                           <button onclick="app.openPdfViewer('${escHtml(d.id)}')" onmouseenter="app.prefetchPdf('${escHtml(d.id)}')" ontouchstart="app.prefetchPdf('${escHtml(d.id)}')" class="text-[#2e3b19] hover:underline font-semibold">ดูไฟล์แนบ</button>
+                           <button onclick="app.confirmDeleteFile('${escHtml(d.id)}')" class="px-2 py-0.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-md font-semibold">ลบไฟล์แนบ</button>`
+                        : `<button onclick="app.openEditModal('${escHtml(d.id)}')" class="text-[#2e3b19] hover:underline font-medium">+ แนบไฟล์ PDF</button>`
                     }
                   </div>
                 </td>
-                <td class="py-3 px-3 whitespace-nowrap">
-                  ${d.noReply ? '<span class="text-stone-500">📌 เพื่อทราบ</span>' : fmtDateTime(d.deadline)}
+                <td class="py-3.5 px-3 whitespace-nowrap tabular-nums">
+                  ${d.noReply ? '<span class="text-stone-500">เพื่อทราบ</span>' : fmtDateTime(d.deadline)}
                 </td>
-                <td class="py-3 px-3 whitespace-nowrap font-semibold">${d.noReply ? '-' : (d.replyCount || 0) + ' คน'}</td>
-                <td class="py-3 px-3 whitespace-nowrap">
+                <td class="py-3.5 px-3 whitespace-nowrap font-semibold tabular-nums">${d.noReply ? '-' : (d.replyCount || 0) + ' คน'}</td>
+                <td class="py-3.5 px-3 whitespace-nowrap">
                   ${
                     d.noReply
-                      ? '<span class="px-2 py-0.5 text-xs rounded-full bg-stone-100 text-stone-600">เพื่อทราบ</span>'
+                      ? '<span class="px-2 py-0.5 text-xs rounded-md bg-stone-100 text-stone-600 border border-stone-200">เพื่อทราบ</span>'
                       : d.status === 'open'
-                      ? '<span class="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-800 font-semibold">เปิดรับ</span>'
-                      : '<span class="px-2 py-0.5 text-xs rounded-full bg-stone-100 text-stone-500">ปิดรับ</span>'
+                      ? '<span class="px-2 py-0.5 text-xs rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">เปิดรับ</span>'
+                      : '<span class="px-2 py-0.5 text-xs rounded-md bg-stone-100 text-stone-500 border border-stone-200">ปิดรับ</span>'
                   }
                 </td>
-                <td class="py-3 px-3 text-right whitespace-nowrap">
+                <td class="py-3.5 px-4 text-right whitespace-nowrap">
                   <div class="flex items-center justify-end gap-1.5">
-                    ${!d.noReply ? `<button onclick="app.openReportView('${escHtml(d.id)}')" class="px-2.5 py-1 text-xs font-semibold text-white bg-[#46562a] hover:bg-[#364320] rounded-lg">📊 รายงาน</button>` : ''}
-                    <button onclick="app.openEditModal('${escHtml(d.id)}')" class="px-2 py-1 text-xs bg-stone-100 hover:bg-stone-200 rounded-lg" title="แก้ไข">✏️</button>
+                    ${!d.noReply ? `<button onclick="app.openReportView('${escHtml(d.id)}')" class="px-2.5 py-1.5 text-xs font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-lg">รายงาน</button>` : ''}
+                    <button onclick="app.openEditModal('${escHtml(d.id)}')" class="px-2.5 py-1.5 text-xs bg-white hover:bg-stone-100 border border-stone-300 rounded-lg font-medium" title="แก้ไข">แก้ไข</button>
                     ${
                       !d.noReply
-                        ? `<button onclick="app.toggleDocStatus('${escHtml(d.id)}')" class="px-2 py-1 text-xs font-medium rounded-lg ${
-                            d.status === 'open' ? 'text-amber-800 bg-amber-100' : 'text-emerald-800 bg-emerald-100'
+                        ? `<button onclick="app.toggleDocStatus('${escHtml(d.id)}')" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border ${
+                            d.status === 'open' ? 'text-amber-800 bg-amber-50 border-amber-200' : 'text-emerald-800 bg-emerald-50 border-emerald-200'
                           }">${d.status === 'open' ? 'ปิดรับ' : 'เปิดรับ'}</button>`
                         : ''
                     }
-                    <button onclick="app.confirmDeleteDoc('${escHtml(d.id)}')" class="px-2 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg">🗑 ลบ</button>
+                    <button onclick="app.confirmDeleteDoc('${escHtml(d.id)}')" class="px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg">ลบ</button>
                   </div>
                 </td>
               </tr>`;
@@ -1090,6 +1314,7 @@
           async () => {
             try {
               await callBackend('deleteDoc', { docId });
+              invalidatePdfCache(docId);
               await pdfIdb.remove(docId).catch(() => {});
               this.showToast('ลบหนังสือเวียนทราบเรียบร้อย', 'success');
               await this.loadData();
@@ -1109,6 +1334,7 @@
           async () => {
             try {
               await callBackend('deleteAttachment', { docId });
+              invalidatePdfCache(docId);
               await pdfIdb.remove(docId).catch(() => {});
               this.showToast('ลบไฟล์แนบเรียบร้อย', 'success');
               await this.loadData();
@@ -1222,6 +1448,7 @@
 
           if (this.state.editRemoveFile && (doc.driveFileId || doc.fileName)) {
             await callBackend('deleteAttachment', { docId: doc.id });
+            invalidatePdfCache(doc.id);
             await pdfIdb.remove(doc.id).catch(() => {});
           }
 
@@ -1242,9 +1469,12 @@
           await callBackend('saveDoc', { doc: updatedDoc });
 
           if (newFile) {
+            invalidatePdfCache(doc.id);
             const { bytes, lastRes } = await uploadFileInChunks(doc.id, newFile, (curr, total) => {
-              this.showToast(`กำลังอัปโหลดไฟล์ใหม่ (${curr}/${total})...`, 'info');
+              const pct = total > 0 ? Math.round((curr / total) * 100) : 0;
+              this.showToast(`กำลังอัปโหลดไฟล์ใหม่ (${curr}/${total} — ${pct}%)...`, 'info');
             });
+            pdfMemCache.set(doc.id, bytes);
             await pdfIdb.save(doc.id, bytes).catch(() => {});
             if (lastRes && lastRes.completed && !lastRes.driveFileId) {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive');
@@ -1252,7 +1482,7 @@
           }
 
           this.closeEditModal();
-          this.showToast('อัปเดตข้อมูลเรียบร้อยแล้ว', 'success');
+          this.showSuccessModal('บันทึกสำเร็จ', `อัปเดตข้อมูลเรื่อง "${title}" เรียบร้อยแล้ว`);
           await this.loadData();
         } catch (err) {
           errEl.textContent = 'บันทึกการแก้ไขไม่สำเร็จ: ' + err.message;
@@ -1262,22 +1492,83 @@
         }
       },
 
-      // -------- PDF VIEWER & DOWNLOAD --------
+      showSuccessModal(title = 'บันทึกสำเร็จ', desc = '') {
+        document.getElementById('success-modal-title').textContent = title;
+        document.getElementById('success-modal-desc').textContent = desc;
+        document.getElementById('success-modal').classList.remove('hidden');
+      },
+
+      closeSuccessModal() {
+        document.getElementById('success-modal').classList.add('hidden');
+      },
+
+      // -------- PDF VIEWER & DOWNLOAD (PREFETCHED + CACHED + PROGRESSIVE) --------
       async getPdfBytes(doc) {
         if (!doc) return null;
+        if (pdfMemCache.has(doc.id)) return pdfMemCache.get(doc.id);
+
         let bytes = await pdfIdb.get(doc.id).catch(() => null);
-        if (bytes && bytes.length > 0) return bytes;
+        if (bytes && bytes.length > 0) {
+          pdfMemCache.set(doc.id, bytes);
+          return bytes;
+        }
 
         if (!doc.driveFileId) return null;
 
-        const res = await callBackend('getPdf', { fileId: doc.driveFileId });
-        const b64 = typeof res === 'string' ? res : (res && res.success && res.base64 ? res.base64 : null);
-        if (b64) {
-          bytes = base64ToUint8(b64);
-          await pdfIdb.save(doc.id, bytes).catch(() => {});
-          return bytes;
+        if (pdfInFlight.has(doc.id)) {
+          return pdfInFlight.get(doc.id);
         }
-        return null;
+
+        const fetchPromise = (async () => {
+          const res = await callBackend('getPdf', { fileId: doc.driveFileId });
+          const b64 = typeof res === 'string' ? res : (res && res.success && res.base64 ? res.base64 : null);
+          if (b64) {
+            const decoded = await base64ToUint8Fast(b64);
+            pdfMemCache.set(doc.id, decoded);
+            await pdfIdb.save(doc.id, decoded).catch(() => {});
+            return decoded;
+          }
+          return null;
+        })();
+
+        pdfInFlight.set(doc.id, fetchPromise);
+        try {
+          return await fetchPromise;
+        } finally {
+          pdfInFlight.delete(doc.id);
+        }
+      },
+
+      async prefetchPdf(docId) {
+        const doc = this.state.docs.find((d) => d.id === docId);
+        if (!doc || !doc.driveFileId) return;
+        if (pdfProxyCache.has(doc.id)) return;
+        try {
+          const bytes = await this.getPdfBytes(doc);
+          if (bytes && bytes.length > 0 && window.pdfjsLib && !pdfProxyCache.has(doc.id)) {
+            const task = pdfjsLib.getDocument({
+              data: bytes.slice(0),
+              worker: getSharedPdfWorker(),
+              disableAutoFetch: true,
+              disableStream: true,
+            });
+            const pdf = await task.promise;
+            pdfProxyCache.set(doc.id, pdf);
+          }
+        } catch {}
+      },
+
+      async prefetchRecentPdfs() {
+        const candidates = this.state.docs
+          .filter((d) => d.driveFileId && (!d.fileSize || Number(d.fileSize) <= 18 * 1024 * 1024))
+          .slice(0, 6);
+        if (candidates.length === 0) return;
+
+        // ดึงข้อมูลล่วงหน้าทีละ 2 ไฟล์ เพื่อไม่รบกวนแบนด์วิดท์หลัก
+        const CONCURRENCY = 2;
+        for (let i = 0; i < candidates.length; i += CONCURRENCY) {
+          await Promise.allSettled(candidates.slice(i, i + CONCURRENCY).map((d) => this.prefetchPdf(d.id)));
+        }
       },
 
       async openPdfViewer(docId) {
@@ -1286,7 +1577,7 @@
         this.state.savedScrollY = window.scrollY;
         this.state.activeDocId = docId;
         this.state.viewingPdfDoc = doc;
-        this.state.viewingPdfBytes = null;
+        this.state.viewingPdfBytes = pdfMemCache.get(docId) || null;
         this.state.pdfProxy = null;
         this.state.pdfScale = 1;
 
@@ -1298,8 +1589,33 @@
         document.getElementById('pdf-zoom-label').textContent = '100%';
         document.getElementById('pdf-page-count').classList.add('hidden');
         const container = document.getElementById('pdf-pages-container');
-        container.innerHTML = '<div class="my-auto text-amber-300 text-xs">⏳ กำลังโหลดเอกสาร...</div>';
         document.getElementById('pdf-viewer-overlay').classList.remove('hidden');
+
+        // Fast Path: หากเอกสารนี้ถูก Prefetch/Parse ไว้ในหน่วยความจำแล้ว เปิดหน้าแรกทันที (< 10ms)
+        if (pdfProxyCache.has(docId)) {
+          try {
+            const cachedPdf = pdfProxyCache.get(docId);
+            this.state.pdfProxy = cachedPdf;
+            const pageCountEl = document.getElementById('pdf-page-count');
+            pageCountEl.textContent = `${cachedPdf.numPages} หน้า`;
+            pageCountEl.classList.remove('hidden');
+            await this.renderPdfPages();
+            return;
+          } catch {
+            pdfProxyCache.delete(docId);
+          }
+        }
+
+        container.innerHTML = `
+          <div class="my-auto flex flex-col items-center gap-3 text-center px-4">
+            <div class="w-8 h-8 border-2 border-[#c9a227] border-t-transparent rounded-full animate-spin"></div>
+            <div class="text-amber-300 text-xs sm:text-sm font-medium">กำลังเปิดเอกสาร PDF...</div>
+            ${
+              doc.driveFileId
+                ? `<a href="https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/view" target="_blank" rel="noopener noreferrer" class="mt-1 px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-stone-200 rounded-lg border border-white/15">เปิดผ่าน Google Drive โดยตรง ↗</a>`
+                : ''
+            }
+          </div>`;
 
         try {
           if (doc.mimeType && !doc.mimeType.includes('pdf')) {
@@ -1310,7 +1626,7 @@
             throw new Error('ไม่พบข้อมูลไฟล์ PDF');
           }
           this.state.viewingPdfBytes = bytes;
-          await this.renderPdfBytes(bytes);
+          await this.renderPdfBytes(bytes, docId);
         } catch (err) {
           if (doc.driveFileId) {
             container.innerHTML = `
@@ -1332,9 +1648,18 @@
         }
       },
 
-      async renderPdfBytes(bytes) {
-        const loadingTask = pdfjsLib.getDocument({ data: bytes.slice(0) });
-        const pdf = await loadingTask.promise;
+      async renderPdfBytes(bytes, docId) {
+        let pdf = docId ? pdfProxyCache.get(docId) : null;
+        if (!pdf) {
+          const loadingTask = pdfjsLib.getDocument({
+            data: bytes.slice(0),
+            worker: getSharedPdfWorker(),
+            disableAutoFetch: true,
+            disableStream: true,
+          });
+          pdf = await loadingTask.promise;
+          if (docId) pdfProxyCache.set(docId, pdf);
+        }
         this.state.pdfProxy = pdf;
 
         const pageCountEl = document.getElementById('pdf-page-count');
@@ -1347,14 +1672,45 @@
       async renderPdfPages() {
         const pdf = this.state.pdfProxy;
         if (!pdf) return;
+
+        if (this.state.pdfObserver) {
+          this.state.pdfObserver.disconnect();
+          this.state.pdfObserver = null;
+        }
+        const token = ++this.state.pdfRenderToken;
         const container = document.getElementById('pdf-pages-container');
         container.innerHTML = '';
 
         const maxW = Math.max(280, Math.min(window.innerWidth - 20, 960)) * this.state.pdfScale;
-        const dpr = Math.min(window.devicePixelRatio || 1.5, 2);
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
+        // ใช้สัดส่วนหน้าแรกเป็นขนาดเริ่มต้นของกล่องหน้าถัดไป เพื่อให้แสดงหน้าแรกได้ทันที
+        const firstPage = await pdf.getPage(1);
+        if (token !== this.state.pdfRenderToken) return;
+        const firstUnscaled = firstPage.getViewport({ scale: 1 });
+        const firstFit = Math.max(0.4, maxW / firstUnscaled.width);
+        const firstCss = firstPage.getViewport({ scale: firstFit });
+
+        const slots = [];
         for (let p = 1; p <= pdf.numPages; p++) {
-          const page = await pdf.getPage(p);
+          const slot = document.createElement('div');
+          slot.dataset.page = String(p);
+          slot.dataset.rendered = '0';
+          slot.style.width = `${Math.floor(firstCss.width)}px`;
+          slot.style.height = `${Math.floor(firstCss.height)}px`;
+          slot.className = 'bg-white shadow-xl shrink-0 flex items-center justify-center text-stone-400 text-xs';
+          slot.textContent = `กำลังโหลดหน้า ${p}...`;
+          container.appendChild(slot);
+          slots.push(slot);
+        }
+
+        const renderSlot = async (slot) => {
+          if (!slot || slot.dataset.rendered !== '0' || token !== this.state.pdfRenderToken) return;
+          slot.dataset.rendered = '1';
+          const p = Number(slot.dataset.page);
+          const page = p === 1 ? firstPage : await pdf.getPage(p);
+          if (token !== this.state.pdfRenderToken) return;
+
           const unscaled = page.getViewport({ scale: 1 });
           const fitScale = Math.max(0.4, maxW / unscaled.width);
           const cssVp = page.getViewport({ scale: fitScale });
@@ -1365,10 +1721,39 @@
           canvas.height = Math.floor(renderVp.height);
           canvas.style.width = `${Math.floor(cssVp.width)}px`;
           canvas.style.height = `${Math.floor(cssVp.height)}px`;
-          canvas.className = 'bg-white shadow-xl shrink-0';
-          container.appendChild(canvas);
+          canvas.className = 'block bg-white';
 
           await page.render({ canvasContext: canvas.getContext('2d'), viewport: renderVp }).promise;
+          if (token !== this.state.pdfRenderToken) return;
+
+          slot.style.width = `${Math.floor(cssVp.width)}px`;
+          slot.style.height = `${Math.floor(cssVp.height)}px`;
+          slot.textContent = '';
+          slot.appendChild(canvas);
+        };
+
+        // เรนเดอร์หน้าแรกทันที แล้วค่อยเรนเดอร์หน้า 2 ในเฟรมถัดไปเพื่อให้ผู้ใช้เห็นเนื้อหาเร็วที่สุด
+        await renderSlot(slots[0]);
+        if (slots[1]) {
+          requestAnimationFrame(() => renderSlot(slots[1]));
+        }
+
+        if (slots.length > 2 && 'IntersectionObserver' in window) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  observer.unobserve(entry.target);
+                  renderSlot(entry.target);
+                }
+              });
+            },
+            { root: container, rootMargin: '500px 0px' }
+          );
+          this.state.pdfObserver = observer;
+          for (let i = 2; i < slots.length; i++) observer.observe(slots[i]);
+        } else {
+          for (let i = 2; i < slots.length; i++) await renderSlot(slots[i]);
         }
       },
 
@@ -1534,10 +1919,10 @@
         const cntCom = docReplies.filter((r) => (r.comment || '').trim().length > 0).length;
 
         document.getElementById('report-stats').innerHTML = `
-          <div class="bg-[#242e14] text-white p-4 rounded-xl border border-[#c9a227]/40"><div class="text-2xl font-extrabold text-[#c9a227]">${docReplies.length}</div><div class="text-xs text-amber-200 mt-1">👥 ตอบกลับทั้งหมด (คน)</div></div>
-          <div class="bg-[#f5f8ed] p-4 rounded-xl border border-[#d2dcc0]"><div class="text-2xl font-bold text-[#46562a]">${cntAck}</div><div class="text-xs text-stone-600 mt-1">✅ รับทราบ</div></div>
-          <div class="bg-amber-50 p-4 rounded-xl border border-amber-200"><div class="text-2xl font-bold text-amber-800">${cntExp}</div><div class="text-xs text-stone-600 mt-1">✍ แจ้งความประสงค์</div></div>
-          <div class="bg-stone-50 p-4 rounded-xl border border-stone-200"><div class="text-2xl font-bold text-stone-700">${cntCom}</div><div class="text-xs text-stone-600 mt-1">💬 มีความเห็น</div></div>`;
+          <div class="bg-[#1e2713] text-white p-3.5 sm:p-4 rounded-xl border border-[#c9a227]/45"><div class="text-xl sm:text-2xl font-extrabold text-[#c9a227] tabular-nums">${docReplies.length}</div><div class="text-xs text-stone-200 mt-1">ตอบกลับทั้งหมด (คน)</div></div>
+          <div class="bg-[#edf2e0] p-3.5 sm:p-4 rounded-xl border border-[#cad5b2]"><div class="text-xl sm:text-2xl font-bold text-[#2e3b19] tabular-nums">${cntAck}</div><div class="text-xs text-stone-600 mt-1">รับทราบ</div></div>
+          <div class="bg-amber-50 p-3.5 sm:p-4 rounded-xl border border-amber-200"><div class="text-xl sm:text-2xl font-bold text-amber-800 tabular-nums">${cntExp}</div><div class="text-xs text-stone-600 mt-1">แจ้งความประสงค์</div></div>
+          <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-stone-200"><div class="text-xl sm:text-2xl font-bold text-stone-700 tabular-nums">${cntCom}</div><div class="text-xs text-stone-600 mt-1">มีความเห็น</div></div>`;
 
         const tabs = [
           { id: 'all', label: `ทั้งหมด (${docReplies.length})` },
@@ -1546,7 +1931,7 @@
           { id: 'com', label: `มีความเห็น (${cntCom})` },
         ];
         document.getElementById('report-filter-tabs').innerHTML = tabs
-          .map((t) => `<button onclick="app.setReportFilter('${t.id}')" class="px-3 py-1.5 rounded-lg text-xs font-medium ${this.state.reportFilter === t.id ? 'bg-[#46562a] text-white' : 'text-stone-600 hover:bg-stone-100'}">${t.label}</button>`)
+          .map((t) => `<button onclick="app.setReportFilter('${t.id}')" class="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium ${this.state.reportFilter === t.id ? 'bg-[#2e3b19] text-white' : 'text-stone-600 hover:bg-stone-200/70'}">${t.label}</button>`)
           .join('');
 
         const filtered = docReplies.filter((r) => {
@@ -1572,14 +1957,14 @@
                 <th class="py-2.5 px-3">ความเห็นเพิ่มเติม</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-stone-100">
+            <tbody class="divide-y divide-stone-200/70">
               ${filtered
                 .map(
                   (r, idx) => `<tr class="hover:bg-stone-50">
-                    <td class="py-2.5 px-3 text-stone-400 font-mono">${idx + 1}</td>
-                    <td class="py-2.5 px-3 whitespace-nowrap text-stone-600">${escHtml(r.timeFormatted || fmtDateTime(r.ts))}</td>
+                    <td class="py-2.5 px-3 text-stone-400 font-mono-num">${idx + 1}</td>
+                    <td class="py-2.5 px-3 whitespace-nowrap text-stone-600 tabular-nums">${escHtml(r.timeFormatted || fmtDateTime(r.ts))}</td>
                     <td class="py-2.5 px-3 font-semibold text-stone-900">${escHtml(r.name)}</td>
-                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-md text-xs font-medium bg-[#eef2e1] text-[#2b3519]">${escHtml(r.response)}</span></td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-md text-xs font-medium bg-[#edf2e0] text-[#283416]">${escHtml(r.response)}</span></td>
                     <td class="py-2.5 px-3 text-stone-600">${escHtml(r.comment || '-')}</td>
                   </tr>`
                 )
@@ -1615,12 +2000,12 @@
       showToast(text, type = 'success') {
         const box = document.getElementById('toast-box');
         box.textContent = text;
-        box.className = `fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold border ${
+        box.className = `fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-24px)] w-max text-center px-4 py-2.5 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold border ${
           type === 'success'
             ? 'bg-emerald-900 text-emerald-100 border-emerald-500'
             : type === 'error'
             ? 'bg-red-900 text-red-100 border-red-500'
-            : 'bg-stone-900 text-stone-100 border-[#c9a227]'
+            : 'bg-[#1a2211] text-stone-100 border-[#c9a227]'
         }`;
         box.classList.remove('hidden');
         clearTimeout(this._toastTimer);
