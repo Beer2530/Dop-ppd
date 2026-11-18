@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>หนังสือเวียนทราบ — กองการเตรียมพล กรมกำลังพลทหารบก</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #384520; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col text-stone-900 pb-14">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-40 bg-[#232c14]/95 backdrop-blur-md text-white border-b-4 border-[#c9a227] shadow-lg">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-full bg-[#c9a227] text-[#1c220f] font-bold flex items-center justify-center border-2 border-white shadow shrink-0">
+          กพ.
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base sm:text-xl truncate">หนังสือเวียนทราบ</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold bg-[#c9a227]/25 text-amber-300 border border-[#c9a227]/40 rounded-full">กพ.ทบ.</span>
+          </div>
+          <p class="text-xs text-amber-200/90 truncate">กองการเตรียมพล กรมกำลังพลทหารบก</p>
+        </div>
+      </div>
+
+      <button onclick="refreshState()" id="btnRefresh" class="px-3 py-1.5 text-xs font-semibold bg-[#34401c] hover:bg-[#435324] border border-white/15 rounded-xl flex items-center gap-1.5">
+        <span>🔄 รีเฟรช</span>
+      </button>
+    </div>
+
+    <div class="bg-[#1a210f] border-t border-white/10 px-4">
+      <div class="max-w-5xl mx-auto flex gap-2 py-1.5">
+        <button id="tabReader" onclick="switchTab('reader')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-[#c9a227] text-[#1c220f] shadow">
+          📄 หนังสือเวียนทราบ
+        </button>
+        <button id="tabAdmin" onclick="switchTab('admin')" class="px-4 py-2 rounded-lg text-sm font-semibold text-stone-300 hover:text-white">
+          🔒 ผู้ดูแลระบบ
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 pt-4 space-y-4">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold bg-emerald-900 text-emerald-100 border border-emerald-400"></div>
+
+    <!-- In-Page PDF Viewer -->
+    <section id="pdfViewerSection" class="hidden bg-white rounded-2xl shadow-2xl overflow-hidden border border-stone-200">
+      <div class="bg-[#232c14] text-white px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+        <button onclick="closePdfViewer()" class="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-semibold">
+          ← กลับหน้ารายการ
+        </button>
+        <h3 id="pdfViewerTitle" class="text-sm font-bold truncate max-w-md"></h3>
+        <div class="flex items-center gap-2">
+          <button id="btnDownloadInViewer" class="px-3 py-1.5 bg-[#c9a227] text-[#1c220f] rounded-xl text-xs font-bold">
+            ⬇ ดาวน์โหลดไฟล์
+          </button>
+        </div>
+      </div>
+      <div id="pdfCanvasContainer" class="p-3 sm:p-6 bg-stone-800 min-h-[70vh] max-h-[82vh] overflow-y-auto flex flex-col items-center gap-4"></div>
+    </section>
+
+    <!-- Reader View -->
+    <section id="readerSection" class="space-y-4">
+      <div class="bg-[#2a3517]/90 border border-[#c9a227]/30 rounded-2xl p-3 sm:p-5 text-white shadow-lg">
+        <div class="grid grid-cols-4 gap-1.5 sm:gap-2" id="categoryButtons">
+          <button onclick="setFilter('all')" data-cat="all" class="cat-btn px-2 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#c9a227] text-[#1c220f]">ทั้งหมด</button>
+          <button onclick="setFilter('open')" data-cat="open" class="cat-btn px-2 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#1e2610] text-stone-200">รอตอบกลับ</button>
+          <button onclick="setFilter('closed')" data-cat="closed" class="cat-btn px-2 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#1e2610] text-stone-200">หมดเวลา/ปิดรับ</button>
+          <button onclick="setFilter('info')" data-cat="info" class="cat-btn px-2 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#1e2610] text-stone-200">📌 เพื่อทราบ</button>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+          <div class="sm:col-span-6">
+            <input id="searchInput" oninput="renderDocs()" type="text" placeholder="ค้นหาชื่อเรื่อง, รายละเอียด..." class="w-full px-3.5 py-2 bg-[#1a210e] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
+          </div>
+          <div class="sm:col-span-6 flex items-center gap-2">
+            <input id="startDate" onchange="renderDocs()" type="date" class="w-full px-2.5 py-1.5 bg-[#1a210e] border border-white/15 rounded-xl text-xs text-stone-200" />
+            <span class="text-xs text-stone-400">ถึง</span>
+            <input id="endDate" onchange="renderDocs()" type="date" class="w-full px-2.5 py-1.5 bg-[#1a210e] border border-white/15 rounded-xl text-xs text-stone-200" />
+          </div>
+        </div>
+      </div>
+
+      <div id="docsContainer" class="space-y-3.5">
+        <div class="bg-white/95 rounded-2xl p-8 text-center text-stone-500 text-sm">กำลังโหลดข้อมูลหนังสือเวียนทราบ...</div>
+      </div>
+    </section>
+
+    <!-- Admin PIN Gate -->
+    <section id="adminPinSection" class="hidden max-w-md mx-auto my-10 bg-white/95 rounded-2xl p-6 sm:p-8 border-t-4 border-[#c9a227] shadow-2xl text-center space-y-4">
+      <h2 class="text-lg font-bold text-stone-900">เข้าสู่ระบบผู้ดูแลระบบ</h2>
+      <p class="text-xs text-stone-500">สำหรับเพิ่ม แก้ไขหนังสือเวียนทราบ และตรวจสอบรายงานผล</p>
+      <div id="pinError" class="hidden p-2.5 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">รหัสผ่านไม่ถูกต้อง</div>
+      <input id="pinInput" type="password" onkeydown="if(event.key==='Enter') verifyAdminPin()" placeholder="รหัสผ่านผู้ดูแล" class="w-full px-4 py-3 text-center text-sm tracking-widest rounded-xl border border-stone-300 bg-stone-50" />
+      <button onclick="verifyAdminPin()" class="w-full py-3 bg-[#46562a] hover:bg-[#38461f] text-white text-sm font-semibold rounded-xl shadow">เข้าสู่ระบบ</button>
+    </section>
+
+    <!-- Admin Dashboard -->
+    <section id="adminSection" class="hidden space-y-6">
+      <div class="bg-white/95 rounded-2xl p-5 border border-stone-200 shadow-xl border-l-8 border-l-[#46562a]">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-100">
+          <h2 class="text-base sm:text-lg font-bold text-stone-900">➕ เพิ่มหนังสือเวียนทราบใหม่</h2>
+          <span class="text-xs text-stone-500">ลบไฟล์อัตโนมัติเมื่อครบ 7 วัน / หลังปิดรับครบ 7 วัน</span>
+        </div>
+
+        <form onsubmit="handleAddDoc(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-stone-800 mb-1">ชื่อเรื่องหนังสือเวียนทราบ *</label>
+            <input id="newTitle" type="text" required class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm" placeholder="ระบุชื่อเรื่อง..." />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-800 mb-1">รายละเอียด / หมายเหตุ</label>
+            <textarea id="newDesc" rows="2" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm"></textarea>
+          </div>
+          <label class="flex items-center gap-2 p-3 rounded-xl border border-stone-200 bg-stone-50 cursor-pointer">
+            <input id="newNoReply" type="checkbox" onchange="toggleDeadlineField()" class="w-4 h-4 accent-[#46562a]" />
+            <span class="text-xs sm:text-sm font-medium">📌 หนังสือเวียนทราบเพื่อทราบเท่านั้น (ไม่ต้องตอบกลับ)</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div id="deadlineWrapper">
+              <label class="block text-xs font-semibold text-stone-800 mb-1">กำหนดตอบกลับ *</label>
+              <input id="newDeadline" type="datetime-local" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-stone-800 mb-1">แนบไฟล์ (PDF, รูปภาพ, เอกสาร ฯลฯ)</label>
+              <input id="newFile" type="file" class="w-full px-3 py-1.5 rounded-xl border border-stone-300 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-[#46562a] file:text-white" />
+            </div>
+          </div>
+          <div id="uploadStatus" class="hidden p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-medium"></div>
+          <div class="flex justify-end">
+            <button id="btnSubmitDoc" type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-[#46562a] hover:bg-[#38461f] rounded-xl shadow">
+              เผยแพร่หนังสือเวียนทราบ
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Admin Table -->
+      <div class="bg-white/95 rounded-2xl p-5 border border-stone-200 shadow-lg overflow-x-auto">
+        <h3 class="text-base font-bold text-stone-900 mb-3">รายการหนังสือเวียนทราบทั้งหมด (<span id="adminDocCount">0</span>)</h3>
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="bg-stone-100 text-stone-700 border-b border-stone-200 font-semibold">
+              <th class="py-2.5 px-3">ชื่อเรื่อง</th>
+              <th class="py-2.5 px-3">กำหนดตอบ</th>
+              <th class="py-2.5 px-3">ตอบแล้ว</th>
+              <th class="py-2.5 px-3">สถานะ</th>
+              <th class="py-2.5 px-3 text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody" class="divide-y divide-stone-100"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Reply Modal -->
+    <div id="replyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-t-4 border-[#c9a227]">
+        <div class="bg-[#232c14] text-white px-5 py-3.5 flex items-center justify-between">
+          <h3 class="font-bold text-sm sm:text-base">✍ ลงชื่อตอบกลับหนังสือเวียนทราบ</h3>
+          <button onclick="closeReplyModal()" class="text-stone-300 hover:text-white">✕</button>
+        </div>
+        <form onsubmit="handleSubmitReply(event)" class="p-5 space-y-4">
+          <p id="replyDocTitle" class="text-xs font-semibold text-[#46562a] bg-[#eef2e1] p-2.5 rounded-xl"></p>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">ยศ - ชื่อ - สกุล *</label>
+            <input id="replyName" type="text" required placeholder="เช่น พ.ท. สมชาย ใจดี" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">ผลการตอบกลับ *</label>
+            <select id="replyResponse" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm bg-white">
+              <option value="รับทราบ">รับทราบ</option>
+              <option value="แจ้งความประสงค์">แจ้งความประสงค์</option>
+              <option value="ไม่มีผู้สมัคร">ไม่มีผู้สมัคร / ไม่ประสงค์</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">รายละเอียดเพิ่มเติม / หมายเหตุ</label>
+            <textarea id="replyComment" rows="2" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm"></textarea>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="closeReplyModal()" class="px-4 py-2 text-xs font-semibold text-stone-600 bg-stone-100 rounded-xl">ยกเลิก</button>
+            <button id="btnSubmitReply" type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-[#46562a] rounded-xl shadow">ส่งการตอบกลับ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border-t-4 border-[#c9a227]">
+        <div class="bg-[#232c14] text-white px-5 py-3.5 flex items-center justify-between">
+          <h3 id="reportModalTitle" class="font-bold text-sm sm:text-base truncate">รายงานผลการตอบกลับ</h3>
+          <button onclick="closeReportModal()" class="text-stone-300 hover:text-white">✕</button>
+        </div>
+        <div class="p-5 space-y-3 max-h-[75vh] overflow-y-auto">
+          <div class="flex justify-between items-center">
+            <span id="reportSummary" class="text-xs font-bold text-stone-700"></span>
+            <button onclick="exportReportCsv()" class="px-3 py-1.5 text-xs font-semibold bg-emerald-700 text-white rounded-xl">⬇ ส่งออก CSV / Excel</button>
+          </div>
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-stone-100 border-b border-stone-200 font-semibold">
+                <th class="p-2">ลำดับ</th>
+                <th class="p-2">ยศ-ชื่อ-สกุล</th>
+                <th class="p-2">การตอบกลับ</th>
+                <th class="p-2">หมายเหตุ</th>
+                <th class="p-2">เวลาที่ตอบ</th>
+              </tr>
+            </thead>
+            <tbody id="reportTableBody" class="divide-y divide-stone-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="text-center text-xs text-amber-200/60 mt-auto py-4">
+    กองการเตรียมพล กรมกำลังพลทหารบก · ระบบหนังสือเวียนทราบ
+  </footer>
+
+  <script>
+    // ==============================================================================
+    // ใส่ Web App URL ที่ได้จากการ Deploy Google Apps Script (ลงท้ายด้วย /exec)
+    // ==============================================================================
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby5e2FVMkthFxrVKGPFCooPKyUsQieqsx8Z_As1HhsUNfZ6AwiK5aQ1CBx7-w-c9dvZlQ/exec';
+
+    let state = { docs: [], replies: [] };
+    let currentFilter = 'all';
+    let currentTab = 'reader';
+    let adminUnlocked = false;
+    let activeReplyDoc = null;
+    let activeReportDoc = null;
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    async function callBackend(action, payload = {}) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return new Promise((resolve, reject) => {
+          const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+          if (action === 'getState') runner.getAppState();
+          else if (action === 'saveDoc') runner.saveDocument(payload.doc);
+          else if (action === 'uploadChunk') runner.uploadFileChunk(payload.docId, payload.index, payload.total, payload.chunkBase64, payload.fileName, payload.mimeType);
+          else if (action === 'deleteDoc') runner.deleteDocument(payload.docId);
+          else if (action === 'deleteAttachment') runner.deleteDocAttachmentOnly(payload.docId);
+          else if (action === 'toggleStatus') runner.toggleDocStatus(payload.docId, payload.status);
+          else if (action === 'submitReply') runner.submitReply(payload.reply);
+          else if (action === 'incrementView') runner.incrementDocView(payload.docId);
+          else if (action === 'getPdf') runner.getPdfBase64(payload.fileId);
+        });
+      }
+
+      if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('YOUR_SCRIPT_ID')) {
+        throw new Error('กรุณานำลิงก์ Web App URL ไปใส่ในโค้ดก่อนใช้งาน');
+      }
+
+      // ใช้ text/plain เพื่อหลีกเลี่ยง CORS preflight (OPTIONS) เมื่อเรียกจาก GitHub Pages
+      const response = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, ...payload })
+      });
+      return await response.json();
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 3500);
+    }
+
+    function formatDate(ms) {
+      if (!ms) return '-';
+      return new Date(Number(ms)).toLocaleDateString('th-TH', { dateStyle: 'medium' });
+    }
+
+    function formatDateTime(ms) {
+      if (!ms) return '-';
+      return new Date(Number(ms)).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+
+    async function refreshState() {
+      const btn = document.getElementById('btnRefresh');
+      btn.disabled = true;
+      try {
+        const res = await callBackend('getState');
+        if (res && res.docs) {
+          state.docs = res.docs;
+          state.replies = res.replies || [];
+          renderDocs();
+          renderAdminTable();
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('pdfViewerSection').classList.add('hidden');
+
+      document.getElementById('tabReader').className = tab === 'reader'
+        ? 'px-4 py-2 rounded-lg text-sm font-semibold bg-[#c9a227] text-[#1c220f] shadow'
+        : 'px-4 py-2 rounded-lg text-sm font-semibold text-stone-300 hover:text-white';
+      document.getElementById('tabAdmin').className = tab === 'admin'
+        ? 'px-4 py-2 rounded-lg text-sm font-semibold bg-[#c9a227] text-[#1c220f] shadow'
+        : 'px-4 py-2 rounded-lg text-sm font-semibold text-stone-300 hover:text-white';
+
+      if (tab === 'reader') {
+        adminUnlocked = false;
+        document.getElementById('readerSection').classList.remove('hidden');
+        document.getElementById('adminPinSection').classList.add('hidden');
+        document.getElementById('adminSection').classList.add('hidden');
+      } else {
+        document.getElementById('readerSection').classList.add('hidden');
+        if (adminUnlocked) {
+          document.getElementById('adminSection').classList.remove('hidden');
+        } else {
+          document.getElementById('adminPinSection').classList.remove('hidden');
+        }
+      }
+    }
+
+    function verifyAdminPin() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (pin === '1234') {
+        adminUnlocked = true;
+        document.getElementById('pinInput').value = '';
+        document.getElementById('pinError').classList.add('hidden');
+        document.getElementById('adminPinSection').classList.add('hidden');
+        document.getElementById('adminSection').classList.remove('hidden');
+        renderAdminTable();
+      } else {
+        document.getElementById('pinError').classList.remove('hidden');
+      }
+    }
+
+    function setFilter(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        const active = btn.getAttribute('data-cat') === cat;
+        btn.className = active
+          ? 'cat-btn px-2 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#c9a227] text-[#1c220f]'
+          : 'cat-btn px-2 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#1e2610] text-stone-200';
+      });
+      renderDocs();
+    }
+
+    function isDocOpen(doc) {
+      return doc.status === 'open' && !doc.noReply && Number(doc.deadline) > Date.now();
+    }
+
+    function getCountdownText(doc) {
+      if (doc.noReply) return '';
+      if (doc.status !== 'open') return '🔒 ปิดรับการตอบกลับแล้ว';
+      const diff = Number(doc.deadline) - Date.now();
+      if (diff <= 0) return '⛔ หมดเวลาตอบกลับ';
+      const d = Math.floor(diff / 86400000);
+      const h = String(Math.floor((diff % 86400000) / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      return `⏳ เหลือเวลา ${d > 0 ? d + ' วัน ' : ''}${h}:${m}:${s}`;
+    }
+
+    function renderDocs() {
+      const kw = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const sDate = document.getElementById('startDate').value;
+      const eDate = document.getElementById('endDate').value;
+
+      const list = state.docs.filter(d => {
+        if (currentFilter === 'open' && !isDocOpen(d)) return false;
+        if (currentFilter === 'closed' && (d.noReply || isDocOpen(d))) return false;
+        if (currentFilter === 'info' && !d.noReply) return false;
+        if (kw && !(`${d.title} ${d.description} ${d.fileName}`).toLowerCase().includes(kw)) return false;
+        if (sDate && d.createdAt < new Date(sDate).getTime()) return false;
+        if (eDate && d.createdAt > new Date(eDate).getTime() + 86400000) return false;
+        return true;
+      });
+
+      const container = document.getElementById('docsContainer');
+      if (list.length === 0) {
+        container.innerHTML = `<div class="bg-white/95 rounded-2xl p-8 text-center text-stone-500 text-sm">ไม่พบหนังสือเวียนทราบตามเงื่อนไข</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(d => {
+        const open = isDocOpen(d);
+        const cd = getCountdownText(d);
+        const hasFile = Boolean(d.driveFileId);
+        return `
+          <article class="bg-white/95 rounded-2xl p-4 sm:p-5 border-l-8 border-l-[#c9a227] shadow-md">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="font-bold text-base sm:text-lg text-stone-900">${d.title}</h3>
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full shrink-0 ${
+                d.noReply ? 'bg-stone-100 text-stone-600' : open ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-stone-500'
+              }">${d.noReply ? '📌 เพื่อทราบ' : open ? '✍ รอตอบกลับ' : 'ปิดรับ'}</span>
+            </div>
+            ${d.description ? `<p class="text-xs sm:text-sm text-stone-600 mt-1.5">${d.description}</p>` : ''}
+            <div class="mt-2.5 flex flex-wrap gap-3 text-xs text-stone-500">
+              <span>📅 ประกาศเมื่อ: ${formatDate(d.createdAt)}</span>
+              ${!d.noReply && d.deadline ? `<span class="text-amber-800 font-semibold">⏰ กำหนดตอบ: ${formatDateTime(d.deadline)}</span>` : ''}
+              ${!d.noReply ? `<span class="bg-stone-100 px-2 py-0.5 rounded">ตอบแล้ว ${d.replyCount || 0} คน</span>` : ''}
+            </div>
+            ${cd ? `<div class="mt-2"><span class="inline-block px-3 py-1 rounded-lg text-xs font-semibold font-mono bg-[#e9eed9] text-[#2b3519]">${cd}</span></div>` : ''}
+            <div class="mt-4 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                ${hasFile ? `
+                  <button onclick="openPdf('${d.id}')" class="px-3.5 py-2 text-xs sm:text-sm font-semibold text-[#2b3519] bg-[#eef2e1] hover:bg-[#dfe6cb] border border-[#c4d0a9] rounded-xl flex items-center gap-1.5">
+                    <span>👁 เปิดอ่านทันที</span>
+                    <span class="px-2 py-0.5 text-[11px] font-bold bg-[#46562a] text-white rounded-full">เปิดอ่านแล้ว ${d.viewCount || 0} คน</span>
+                  </button>
+                  <a href="https://drive.google.com/uc?export=download&id=${d.driveFileId}" target="_blank" class="px-3 py-2 text-xs sm:text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl">
+                    ⬇ ดาวน์โหลด
+                  </a>
+                ` : `
+                  <span class="px-2.5 py-1.5 text-xs bg-stone-100 text-stone-500 rounded-xl">
+                    ${d.expired
+                      ? (d.noReply ? '🗑️ ลบไฟล์แนบอัตโนมัติแล้ว (ครบกำหนด 7 วัน)' : '🗑️ ลบไฟล์แนบอัตโนมัติแล้ว (หลังปิดรับครบ 7 วัน)')
+                      : 'ไม่มีไฟล์แนบ'}
+                  </span>
+                `}
+              </div>
+              ${!d.noReply ? `
+                <button onclick="openReplyModal('${d.id}')" ${!open ? 'disabled' : ''} class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl ${
+                  open ? 'bg-[#46562a] text-white hover:bg-[#38461f]' : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                }">✍ ตอบกลับ</button>
+              ` : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function openPdf(docId) {
+      const doc = state.docs.find(d => d.id === docId);
+      if (!doc || !doc.driveFileId) return;
+
+      doc.viewCount = (doc.viewCount || 0) + 1;
+      renderDocs();
+      callBackend('incrementView', { docId }).catch(() => {});
+
+      document.getElementById('readerSection').classList.add('hidden');
+      document.getElementById('adminSection').classList.add('hidden');
+      document.getElementById('pdfViewerSection').classList.remove('hidden');
+      document.getElementById('pdfViewerTitle').textContent = doc.title;
+      document.getElementById('btnDownloadInViewer').onclick = () => {
+        window.open(`https://drive.google.com/uc?export=download&id=${doc.driveFileId}`, '_blank');
+      };
+
+      const container = document.getElementById('pdfCanvasContainer');
+      container.innerHTML = `<div class="text-white text-sm py-12">กำลังโหลดเอกสาร...</div>`;
+
+      try {
+        if (doc.mimeType && !doc.mimeType.includes('pdf')) {
+          throw new Error('ไม่ใช่ไฟล์ PDF');
+        }
+        const res = await callBackend('getPdf', { fileId: doc.driveFileId });
+        if (!res || !res.success || !res.base64) throw new Error('ไม่สามารถดึงไฟล์ PDF ได้');
+        const raw = atob(res.base64);
+        const bytes = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        container.innerHTML = '';
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement('canvas');
+          canvas.className = 'max-w-full h-auto bg-white shadow-lg rounded';
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          container.appendChild(canvas);
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        }
+      } catch (e) {
+        container.innerHTML = `
+          <iframe src="https://drive.google.com/file/d/${doc.driveFileId}/preview" class="w-full h-[75vh] bg-white rounded-xl border-0"></iframe>
+        `;
+      }
+    }
+
+    function closePdfViewer() {
+      document.getElementById('pdfViewerSection').classList.add('hidden');
+      switchTab(currentTab);
+    }
+
+    function toggleDeadlineField() {
+      const noReply = document.getElementById('newNoReply').checked;
+      document.getElementById('deadlineWrapper').style.display = noReply ? 'none' : 'block';
+    }
+
+    async function handleAddDoc(e) {
+      e.preventDefault();
+      const title = document.getElementById('newTitle').value.trim();
+      const description = document.getElementById('newDesc').value.trim();
+      const noReply = document.getElementById('newNoReply').checked;
+      const deadlineVal = document.getElementById('newDeadline').value;
+      const fileInput = document.getElementById('newFile');
+      const file = fileInput.files[0];
+
+      const statusEl = document.getElementById('uploadStatus');
+      const btn = document.getElementById('btnSubmitDoc');
+      btn.disabled = true;
+      statusEl.classList.remove('hidden');
+      statusEl.textContent = 'กำลังบันทึกข้อมูลหนังสือเวียนทราบ...';
+
+      try {
+        const docId = 'doc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+        const newDoc = {
+          id: docId,
+          title,
+          description,
+          fileName: file ? file.name : '',
+          driveFileId: '',
+          mimeType: file ? (file.type || 'application/pdf') : 'application/pdf',
+          fileSize: file ? file.size : 0,
+          createdAt: Date.now(),
+          deadline: noReply ? 0 : (deadlineVal ? new Date(deadlineVal).getTime() : Date.now() + 7 * 86400000),
+          status: 'open',
+          closedAt: 0,
+          noReply
+        };
+
+        await callBackend('saveDoc', { doc: newDoc });
+
+        if (file) {
+          const buf = await file.arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          const CHUNK_SIZE = 524288; // 512 KB
+          const totalChunks = Math.ceil(bytes.length / CHUNK_SIZE);
+
+          for (let i = 0; i < totalChunks; i++) {
+            statusEl.textContent = `กำลังอัปโหลดไฟล์แนบ (${i + 1}/${totalChunks})...`;
+            const slice = bytes.subarray(i * CHUNK_SIZE, Math.min((i + 1) * CHUNK_SIZE, bytes.length));
+            let binary = '';
+            for (let j = 0; j < slice.length; j++) binary += String.fromCharCode(slice[j]);
+            const chunkBase64 = btoa(binary);
+            await callBackend('uploadChunk', {
+              docId,
+              index: i,
+              total: totalChunks,
+              chunkBase64,
+              fileName: file.name,
+              mimeType: file.type || 'application/pdf'
+            });
+          }
+        }
+
+        document.getElementById('newTitle').value = '';
+        document.getElementById('newDesc').value = '';
+        fileInput.value = '';
+        showToast('เผยแพร่หนังสือเวียนทราบเรียบร้อยแล้ว');
+        await refreshState();
+      } catch (err) {
+        showToast('เกิดข้อผิดพลาด: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        statusEl.classList.add('hidden');
+      }
+    }
+
+    function renderAdminTable() {
+      document.getElementById('adminDocCount').textContent = state.docs.length;
+      const tbody = document.getElementById('adminTableBody');
+      tbody.innerHTML = state.docs.map(d => `
+        <tr class="hover:bg-stone-50">
+          <td class="py-3 px-3">
+            <div class="font-semibold text-stone-900">${d.title}</div>
+            <div class="text-[11px] text-stone-500 mt-0.5 flex flex-wrap gap-2">
+              <span>ประกาศ: ${formatDate(d.createdAt)}</span>
+              <span class="text-[#46562a] bg-[#eef2e1] px-2 py-0.5 rounded-full font-semibold">เปิดอ่าน ${d.viewCount || 0} คน</span>
+              ${d.driveFileId ? `<button onclick="deleteAttachment('${d.id}')" class="text-red-600 hover:underline">ลบเฉพาะไฟล์แนบ</button>` : ''}
+            </div>
+          </td>
+          <td class="py-3 px-3 whitespace-nowrap">${d.noReply ? '📌 เพื่อทราบ' : formatDateTime(d.deadline)}</td>
+          <td class="py-3 px-3 whitespace-nowrap">${d.noReply ? '-' : (d.replyCount || 0) + ' คน'}</td>
+          <td class="py-3 px-3 whitespace-nowrap">${d.noReply ? 'เพื่อทราบ' : d.status === 'open' ? '<span class="text-emerald-700 font-bold">เปิดรับ</span>' : '<span class="text-stone-500">ปิดรับ</span>'}</td>
+          <td class="py-3 px-3 text-right whitespace-nowrap space-x-1">
+            ${!d.noReply ? `<button onclick="openReportModal('${d.id}')" class="px-2.5 py-1 text-xs font-semibold text-white bg-[#46562a] rounded-lg">รายงาน</button>` : ''}
+            ${!d.noReply ? `<button onclick="toggleStatus('${d.id}', '${d.status === 'open' ? 'closed' : 'open'}')" class="px-2.5 py-1 text-xs font-semibold bg-amber-100 text-amber-800 rounded-lg">${d.status === 'open' ? 'ปิดรับ' : 'เปิดรับ'}</button>` : ''}
+            <button onclick="deleteDoc('${d.id}')" class="px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg">ลบ</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleStatus(docId, status) {
+      await callBackend('toggleStatus', { docId, status });
+      showToast(status === 'closed' ? 'ปิดรับคำตอบแล้ว (ไฟล์จะถูกลบอัตโนมัติในอีก 7 วัน)' : 'เปิดรับคำตอบอีกครั้ง');
+      await refreshState();
+    }
+
+    async function deleteAttachment(docId) {
+      if (!confirm('ยืนยันการลบเฉพาะไฟล์แนบของเรื่องนี้?')) return;
+      await callBackend('deleteAttachment', { docId });
+      showToast('ลบไฟล์แนบเรียบร้อยแล้ว');
+      await refreshState();
+    }
+
+    async function deleteDoc(docId) {
+      if (!confirm('ยืนยันการลบรายการหนังสือเวียนทราบนี้? ข้อมูลการตอบกลับจะถูกลบทั้งหมด')) return;
+      await callBackend('deleteDoc', { docId });
+      showToast('ลบรายการเรียบร้อยแล้ว');
+      await refreshState();
+    }
+
+    function openReplyModal(docId) {
+      activeReplyDoc = state.docs.find(d => d.id === docId);
+      if (!activeReplyDoc) return;
+      document.getElementById('replyDocTitle').textContent = activeReplyDoc.title;
+      document.getElementById('replyModal').classList.remove('hidden');
+    }
+
+    function closeReplyModal() {
+      document.getElementById('replyModal').classList.add('hidden');
+    }
+
+    async function handleSubmitReply(e) {
+      e.preventDefault();
+      if (!activeReplyDoc) return;
+      const btn = document.getElementById('btnSubmitReply');
+      btn.disabled = true;
+      try {
+        const reply = {
+          id: 'rep-' + Date.now(),
+          docId: activeReplyDoc.id,
+          docTitle: activeReplyDoc.title,
+          name: document.getElementById('replyName').value.trim(),
+          response: document.getElementById('replyResponse').value,
+          comment: document.getElementById('replyComment').value.trim(),
+          ts: Date.now()
+        };
+        await callBackend('submitReply', { reply });
+        document.getElementById('replyName').value = '';
+        document.getElementById('replyComment').value = '';
+        closeReplyModal();
+        showToast('ส่งการตอบกลับเรียบร้อยแล้ว');
+        await refreshState();
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function openReportModal(docId) {
+      activeReportDoc = state.docs.find(d => d.id === docId);
+      if (!activeReportDoc) return;
+      const docReplies = state.replies.filter(r => r.docId === docId);
+      document.getElementById('reportModalTitle').textContent = 'รายงานผล: ' + activeReportDoc.title;
+      document.getElementById('reportSummary').textContent = `ผู้ตอบกลับทั้งหมด ${docReplies.length} คน (เปิดอ่าน ${activeReportDoc.viewCount || 0} คน)`;
+      document.getElementById('reportTableBody').innerHTML = docReplies.map((r, i) => `
+        <tr>
+          <td class="p-2">${i + 1}</td>
+          <td class="p-2 font-semibold">${r.name}</td>
+          <td class="p-2">${r.response}</td>
+          <td class="p-2">${r.comment || '-'}</td>
+          <td class="p-2">${r.timeFormatted || formatDateTime(r.ts)}</td>
+        </tr>
+      `).join('');
+      document.getElementById('reportModal').classList.remove('hidden');
+    }
+
+    function closeReportModal() {
+      document.getElementById('reportModal').classList.add('hidden');
+    }
+
+    function exportReportCsv() {
+      if (!activeReportDoc) return;
+      const docReplies = state.replies.filter(r => r.docId === activeReportDoc.id);
+      const rows = [['ลำดับ', 'ยศ-ชื่อ-สกุล', 'การตอบกลับ', 'หมายเหตุ', 'เวลาที่ตอบ']];
+      docReplies.forEach((r, idx) => {
+        rows.push([idx + 1, r.name, r.response, r.comment || '', r.timeFormatted || formatDateTime(r.ts)]);
+      });
+      const csvContent = '\uFEFF' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `รายงานการตอบกลับ_${activeReportDoc.title}.csv`;
+      a.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const d = new Date(Date.now() + 7 * 86400000);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      document.getElementById('newDeadline').value = d.toISOString().slice(0, 16);
+      refreshState();
+      setInterval(() => {
+        if (currentTab === 'reader') renderDocs();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
