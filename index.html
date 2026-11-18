@@ -214,8 +214,11 @@
             <span class="w-2 h-2 rounded-full bg-[#c9a227] shrink-0"></span>
             <h2 class="text-sm sm:text-base font-bold tracking-tight truncate">เพิ่มหนังสือเวียนทราบใหม่</h2>
           </div>
-          <div class="flex items-center gap-2.5 shrink-0">
-            <span class="hidden md:inline text-[11px] text-stone-300">เก็บไฟล์ใน Google Drive ถาวร</span>
+          <div class="flex items-center gap-2 shrink-0 flex-wrap">
+            <span class="hidden lg:inline text-[11px] text-stone-300">เก็บไฟล์ใน Google Drive ถาวร</span>
+            <button type="button" onclick="app.openImportModal()" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-[#141a0b] bg-[#c9a227] hover:bg-[#dfb83d] rounded-lg transition-colors">
+              นำเข้าจากแอปเก่า
+            </button>
             <button type="button" onclick="app.adminLogout()" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-stone-200 bg-white/10 hover:bg-red-500/20 hover:text-red-200 border border-white/15 rounded-lg transition-colors">
               ออกจากระบบ
             </button>
@@ -446,6 +449,62 @@
     </div>
   </div>
 
+  <!-- ==================== IMPORT OLD APP MODAL ==================== -->
+  <div id="import-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-xl max-h-[92dvh] overflow-y-auto border border-[#c9a227]/50 my-auto">
+      <div class="bg-[#1e2713] text-white px-5 py-4 flex items-center justify-between border-b border-[#c9a227]/40 sticky top-0 z-10">
+        <h3 class="font-bold text-sm sm:text-base">นำเข้าข้อมูลทั้งหมดจากแอปเก่า</h3>
+        <button onclick="app.closeImportModal()" class="min-w-[36px] min-h-[36px] flex items-center justify-center text-stone-300 hover:text-white rounded-lg hover:bg-white/10">✕</button>
+      </div>
+      <div class="p-4 sm:p-6 space-y-4 text-xs sm:text-sm">
+        <div class="p-3.5 rounded-xl bg-[#edf2e0] border border-[#cad5b2] space-y-2">
+          <label class="block text-xs font-bold text-[#1e2713]">ลิงก์ API แอปเก่า (/api/export)</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input id="import-export-url" type="url" value="https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app/api/export" class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-[#b4c298] bg-white text-xs font-mono-num focus:outline-none focus:ring-2 focus:ring-[#3a4a21]" />
+            <button id="import-fetch-btn" type="button" onclick="app.fetchAndImportFromUrl()" class="min-h-[40px] px-4 py-2 bg-[#2e3b19] hover:bg-[#232d12] text-white text-xs font-bold rounded-xl shadow-sm shrink-0 disabled:opacity-50">
+              ดึงทันที
+            </button>
+          </div>
+          <p class="text-[11px] text-stone-600 leading-relaxed">หากแอปเก่าเปิดสิทธิ์สาธารณะ ระบบจะดึงเรื่อง ไฟล์ PDF และคำตอบทั้งหมดเข้าทันที (หากติดล็อกอิน AI Studio ให้ใช้วิธีด้านล่าง)</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 space-y-2 text-xs leading-relaxed">
+          <div class="font-bold">กรณีแอปเก่าติดล็อกอิน Google — วิธีดึงครบทั้งเรื่อง + ไฟล์ PDF + คำตอบ:</div>
+          <ol class="list-decimal pl-4 space-y-1">
+            <li>เปิดแท็บแอปเก่า <a href="https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app" target="_blank" rel="noopener noreferrer" class="underline font-semibold text-[#2e3b19]">เปิดแอปเก่า ↗</a> (ต้องล็อกอินบัญชี Google ที่ใช้งาน)</li>
+            <li>กด <kbd class="px-1.5 py-0.5 bg-white border border-amber-300 rounded text-[11px]">F12</kbd> เปิดแท็บ <strong>Console</strong> แล้ววางสคริปต์ที่คัดลอกจากปุ่มด้านล่าง จากนั้นกด <kbd class="px-1.5 py-0.5 bg-white border border-amber-300 rounded text-[11px]">Enter</kbd></li>
+            <li>ระบบจะดูดข้อมูลและไฟล์ PDF ทั้งหมดส่งเข้า Google Sheets + Drive ให้อัตโนมัติ (หรือดาวน์โหลดไฟล์ <code>dop-old-backup.json</code> ให้นำมาวางด้านล่าง)</li>
+          </ol>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button type="button" onclick="app.copyOldAppPullScript()" class="min-h-[38px] px-3 py-1.5 bg-[#2e3b19] hover:bg-[#232d12] text-white text-xs font-semibold rounded-lg shadow-sm">
+              คัดลอกสคริปต์ดึงข้อมูล + PDF ทั้งหมด
+            </button>
+            <a href="https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app/api/export" target="_blank" rel="noopener noreferrer" class="min-h-[38px] inline-flex items-center px-3 py-1.5 bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-xs font-semibold rounded-lg">
+              เปิด /api/export ↗
+            </a>
+          </div>
+        </div>
+
+        <div class="space-y-3 border-t border-stone-200 pt-3">
+          <div class="font-bold text-stone-800 text-xs sm:text-sm">หรือนำเข้าจากไฟล์ JSON / ข้อความที่คัดลอกจาก /api/export:</div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">เลือกไฟล์ .json (จากแอปเก่า หรือไฟล์ backup)</label>
+            <input id="import-json-file" type="file" accept=".json,application/json" onchange="app.handleImportFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">หรือวางข้อมูล JSON ที่นี่</label>
+            <textarea id="import-json-text" rows="4" placeholder='{"docs": [...], "replies": [...]}' class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono-num focus:outline-none focus:ring-2 focus:ring-[#3a4a21]"></textarea>
+          </div>
+          <div id="import-progress" class="hidden p-3 rounded-xl text-xs bg-stone-100 border border-stone-200 text-stone-700 leading-relaxed"></div>
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+            <button type="button" onclick="app.closeImportModal()" class="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-200/70 rounded-xl">ปิด</button>
+            <button id="import-submit-btn" type="button" onclick="app.runImportFromJson()" class="min-h-[42px] px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-xl shadow-md disabled:opacity-50">เริ่มนำเข้าข้อมูลทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== SUCCESS POPUP MODAL ==================== -->
   <div id="success-modal" onclick="if(event.target===this) app.closeSuccessModal()" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
     <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-emerald-600 text-center space-y-4">
@@ -513,6 +572,8 @@
           else if (action === 'submitReply') runner.submitReply(payload.reply);
           else if (action === 'incrementView') runner.incrementDocView(payload.docId);
           else if (action === 'getPdf') runner.getPdfBase64(payload.fileId);
+          else if (action === 'importDoc') runner.importDocument(payload.doc);
+          else if (action === 'importReply') runner.importReply(payload.reply);
         });
       }
 
@@ -752,6 +813,10 @@
           if (e.key === 'Escape') {
             if (!document.getElementById('success-modal').classList.contains('hidden')) {
               this.closeSuccessModal();
+              return;
+            }
+            if (!document.getElementById('import-modal').classList.contains('hidden')) {
+              this.closeImportModal();
               return;
             }
             if (!document.getElementById('pdf-viewer-overlay').classList.contains('hidden')) {
@@ -2013,6 +2078,369 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
+      },
+
+      // -------- IMPORT FROM OLD APP --------
+      openImportModal() {
+        document.getElementById('import-json-file').value = '';
+        document.getElementById('import-json-text').value = '';
+        const prog = document.getElementById('import-progress');
+        prog.classList.add('hidden');
+        prog.textContent = '';
+        document.getElementById('import-modal').classList.remove('hidden');
+      },
+
+      closeImportModal() {
+        document.getElementById('import-modal').classList.add('hidden');
+      },
+
+      async handleImportFileChange(input) {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        try {
+          const text = await f.text();
+          document.getElementById('import-json-text').value = text;
+          this.showToast(`โหลดไฟล์ ${f.name} พร้อมนำเข้าแล้ว`, 'info');
+        } catch (err) {
+          this.showToast('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'error');
+        }
+      },
+
+      copyOldAppPullScript() {
+        const script = `(async () => {
+  const GAS = '${GAS_WEB_APP_URL}';
+  console.log('กำลังดึงข้อมูลจากแอปเก่า /api/export ...');
+  const res = await fetch('/api/export', { credentials: 'include' });
+  const data = await res.json();
+  const docs = data.docs || [];
+  const replies = data.replies || [];
+  console.log('พบหนังสือ ' + docs.length + ' เรื่อง, คำตอบ ' + replies.length + ' รายการ');
+
+  const toB64 = (buf) => {
+    const b = new Uint8Array(buf);
+    let s = '';
+    for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, Math.min(i + 0x8000, b.length)));
+    return btoa(s);
+  };
+
+  const st = await (await fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'getState' }) })).json();
+  const exDocMap = new Map((st.docs || []).map(x => [String(x.id), x]));
+  const exReps = new Set((st.replies || []).map(x => String(x.id)));
+
+  for (let i = 0; i < docs.length; i++) {
+    const d = docs[i];
+    const ex = exDocMap.get(String(d.id));
+    if (ex && ex.driveFileId) continue;
+    const candidates = [d.pdfDownloadUrl, d.pdfStreamUrl].filter(Boolean);
+    for (const rawUrl of candidates) {
+      if (d.pdfBase64) break;
+      try {
+        console.log('กำลังโหลด PDF (' + (i + 1) + '/' + docs.length + '): ' + d.title);
+        const u = new URL(rawUrl, location.origin);
+        const r = await fetch(u.pathname + u.search, { credentials: 'include' });
+        const ct = r.headers.get('content-type') || '';
+        if (r.ok && !ct.includes('text/html') && !ct.includes('application/json')) {
+          const buf = await r.arrayBuffer();
+          if (buf.byteLength > 100) d.pdfBase64 = toB64(buf);
+        }
+      } catch (e) { console.warn('โหลด PDF ไม่ได้:', d.title, e); }
+    }
+  }
+
+  const dl = () => {
+    const blob = new Blob([JSON.stringify({ docs, replies })], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dop-old-backup.json';
+    a.click();
+    console.log('ดาวน์โหลดไฟล์ dop-old-backup.json สำเร็จ ให้นำไปอัปโหลดในหน้าผู้ดูแลระบบของแอปใหม่');
+  };
+
+  try {
+    const postGas = async (action, payload) => {
+      const resp = await fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, ...payload }) });
+      return resp.json();
+    };
+    for (let i = 0; i < docs.length; i++) {
+      const d = docs[i];
+      const ex = exDocMap.get(String(d.id));
+      if (!ex) {
+        let r = await postGas('importDoc', { doc: d }).catch(() => null);
+        if (!r || !r.success) await postGas('saveDoc', { doc: d });
+      }
+      if (d.pdfBase64 && (!ex || !ex.driveFileId)) {
+        const bin = atob(d.pdfBase64);
+        const bytes = new Uint8Array(bin.length);
+        for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+        const CHUNK = 3145728;
+        const total = Math.max(1, Math.ceil(bytes.length / CHUNK));
+        for (let c = 0; c < total; c++) {
+          const sl = bytes.subarray(c * CHUNK, Math.min((c + 1) * CHUNK, bytes.length));
+          await postGas('uploadChunk', { docId: d.id, index: c, total, chunkBase64: toB64(sl.buffer), fileName: d.fileName || (d.title + '.pdf'), mimeType: 'application/pdf' });
+        }
+      }
+      console.log('นำเข้าเรื่องแล้ว ' + (i + 1) + '/' + docs.length);
+    }
+    for (const r of replies) {
+      if (!exReps.has(String(r.id))) {
+        let resR = await postGas('importReply', { reply: r }).catch(() => null);
+        if (!resR || !resR.success) await postGas('submitReply', { reply: r });
+      }
+    }
+    console.log('เสร็จสมบูรณ์! รีเฟรชหน้าแอปใหม่เพื่อดูข้อมูลทั้งหมด');
+  } catch (e) {
+    console.warn('ส่งตรงไม่สำเร็จ กำลังดาวน์โหลดไฟล์สำรองให้แทน...', e);
+    dl();
+  }
+})();`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(script).then(
+            () => this.showToast('คัดลอกสคริปต์เรียบร้อย นำไปวางใน Console (F12) ของแอปเก่าได้เลย', 'success'),
+            () => {
+              document.getElementById('import-json-text').value = script;
+              this.showToast('ไม่สามารถเข้าถึงคลิปบอร์ดอัตโนมัติ แสดงสคริปต์ในช่องข้อความแล้ว', 'info');
+            }
+          );
+        } else {
+          document.getElementById('import-json-text').value = script;
+          this.showToast('คัดลอกสคริปต์จากช่องข้อความด้านล่าง', 'info');
+        }
+      },
+
+      async fetchAndImportFromUrl() {
+        const urlInput = document.getElementById('import-export-url');
+        const exportUrl = (urlInput ? urlInput.value : '').trim();
+        const prog = document.getElementById('import-progress');
+        const fetchBtn = document.getElementById('import-fetch-btn');
+        const submitBtn = document.getElementById('import-submit-btn');
+
+        const setProg = (msg, isErr = false) => {
+          prog.textContent = msg;
+          prog.className = isErr
+            ? 'p-3 rounded-xl text-xs bg-red-50 border border-red-200 text-red-700 leading-relaxed'
+            : 'p-3 rounded-xl text-xs bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed';
+          prog.classList.remove('hidden');
+        };
+
+        if (!exportUrl) {
+          setProg('กรุณาระบุลิงก์ /api/export ก่อนกดดึงข้อมูล', true);
+          return;
+        }
+
+        if (fetchBtn) fetchBtn.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
+        setProg(`กำลังดึงข้อมูลจาก ${exportUrl} ...`);
+
+        let payload = null;
+        let authBlocked = false;
+
+        // 1. ลองดึงตรงจากเบราว์เซอร์ก่อน (พร้อม session cookie)
+        try {
+          const directRes = await fetch(exportUrl, { credentials: 'include' });
+          const directText = await directRes.text();
+          const parsed = JSON.parse(directText);
+          if (parsed && (Array.isArray(parsed.docs) || Array.isArray(parsed.replies))) {
+            payload = parsed;
+          }
+        } catch {}
+
+        // 2. ลองผ่าน Server Proxy ของแอป (/api/proxy-export)
+        if (!payload && !isGasEmbedded()) {
+          try {
+            const proxyRes = await fetch(`/api/proxy-export?url=${encodeURIComponent(exportUrl)}`);
+            const proxyData = await proxyRes.json();
+            if (proxyRes.ok && (Array.isArray(proxyData.docs) || Array.isArray(proxyData.replies))) {
+              payload = proxyData;
+            } else if (proxyData && proxyData.error === 'AUTH_REQUIRED') {
+              authBlocked = true;
+            }
+          } catch {}
+        }
+
+        if (!payload) {
+          if (fetchBtn) fetchBtn.disabled = false;
+          if (submitBtn) submitBtn.disabled = false;
+          setProg(
+            authBlocked
+              ? 'ไม่สามารถดึงข้ามเว็บอัตโนมัติได้ เพราะแอปเก่ายังติดระบบล็อกอินบัญชี Google — กรุณากดปุ่ม "คัดลอกสคริปต์ดึงข้อมูล + PDF ทั้งหมด" แล้วนำไปวางใน Console (F12) ของแท็บแอปเก่า หรือกด "เปิด /api/export ↗" แล้วคัดลอก JSON มาวางด้านล่างแทน'
+              : 'ดึงข้อมูลจากลิงก์ไม่สำเร็จ — กรุณากดปุ่ม "เปิด /api/export ↗" เพื่อคัดลอก JSON มาวางด้านล่าง หรือใช้สคริปต์ใน Console ของแท็บแอปเก่า',
+            true
+          );
+          return;
+        }
+
+        try {
+          await this.importPayload(payload, setProg);
+        } catch (err) {
+          setProg('นำเข้าไม่สำเร็จ: ' + err.message, true);
+        } finally {
+          if (fetchBtn) fetchBtn.disabled = false;
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      },
+
+      async runImportFromJson() {
+        const raw = (document.getElementById('import-json-text').value || '').trim();
+        const prog = document.getElementById('import-progress');
+        const btn = document.getElementById('import-submit-btn');
+        const fetchBtn = document.getElementById('import-fetch-btn');
+        const setProg = (msg, isErr = false) => {
+          prog.textContent = msg;
+          prog.className = isErr
+            ? 'p-3 rounded-xl text-xs bg-red-50 border border-red-200 text-red-700 leading-relaxed'
+            : 'p-3 rounded-xl text-xs bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed';
+          prog.classList.remove('hidden');
+        };
+
+        if (!raw) {
+          setProg('กรุณาเลือกไฟล์ .json หรือวางข้อมูล JSON จากแอปเก่าก่อนกดนำเข้า', true);
+          return;
+        }
+
+        let payload;
+        try {
+          payload = JSON.parse(raw);
+        } catch {
+          setProg('รูปแบบ JSON ไม่ถูกต้อง กรุณาคัดลอก JSON จาก /api/export ให้ครบถ้วน', true);
+          return;
+        }
+
+        btn.disabled = true;
+        if (fetchBtn) fetchBtn.disabled = true;
+        try {
+          await this.importPayload(payload, setProg);
+        } catch (err) {
+          setProg('นำเข้าไม่สำเร็จ: ' + err.message, true);
+        } finally {
+          btn.disabled = false;
+          if (fetchBtn) fetchBtn.disabled = false;
+        }
+      },
+
+      async importPayload(payload, setProg) {
+        const docs = Array.isArray(payload.docs) ? payload.docs : [];
+        const replies = Array.isArray(payload.replies) ? payload.replies : [];
+        if (docs.length === 0 && replies.length === 0) {
+          setProg('ไม่พบรายการ docs หรือ replies ในข้อมูล JSON', true);
+          return;
+        }
+
+        let importedDocs = 0;
+        let importedPdfs = 0;
+        let missedPdfs = 0;
+        let importedReplies = 0;
+        const urlInput = document.getElementById('import-export-url');
+        const oldOrigin = (() => {
+          try {
+            return new URL((urlInput && urlInput.value) || 'https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app/api/export').origin;
+          } catch {
+            return 'https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app';
+          }
+        })();
+
+        const existingDocIds = new Set(this.state.docs.map((d) => String(d.id)));
+        const existingReplyIds = new Set(this.state.replies.map((r) => String(r.id)));
+
+        for (let i = 0; i < docs.length; i++) {
+          const d = docs[i];
+          const idStr = String(d.id);
+          const existingDoc = this.state.docs.find((x) => String(x.id) === idStr);
+          setProg(`กำลังนำเข้าเรื่อง (${i + 1}/${docs.length}): ${d.title || idStr}...`);
+
+          if (!existingDocIds.has(idStr)) {
+            const docObj = {
+              id: idStr,
+              title: d.title || '',
+              description: d.description || '',
+              fileName: d.fileName || '',
+              driveFileId: d.driveFileId || '',
+              mimeType: d.mimeType || 'application/pdf',
+              fileSize: Number(d.fileSize) || 0,
+              createdAt: Number(d.createdAt) || Date.now(),
+              deadline: Number(d.deadline) || 0,
+              status: d.status || 'open',
+              closedAt: Number(d.closedAt) || 0,
+              noReply: Boolean(d.noReply),
+              replyCount: Number(d.replyCount) || 0,
+              viewCount: Number(d.viewCount) || 0,
+            };
+            try {
+              await callBackend('importDoc', { doc: docObj });
+            } catch {
+              await callBackend('saveDoc', { doc: docObj });
+            }
+            existingDocIds.add(idStr);
+            importedDocs += 1;
+          }
+
+          const hasTargetDriveId = Boolean((existingDoc && existingDoc.driveFileId) || d.driveFileId);
+          const needsPdf = !hasTargetDriveId;
+          if (needsPdf) {
+            let pdfBytes = null;
+            if (d.pdfBase64) {
+              pdfBytes = await base64ToUint8Fast(d.pdfBase64);
+            } else {
+              const candidates = [d.pdfDownloadUrl, d.pdfStreamUrl].filter(Boolean);
+              for (const rawUrl of candidates) {
+                if (pdfBytes) break;
+                try {
+                  const absPdfUrl = new URL(rawUrl, oldOrigin).toString();
+                  const pdfRes = await fetch(absPdfUrl, { credentials: 'include' });
+                  if (pdfRes.ok) {
+                    const ct = pdfRes.headers.get('content-type') || '';
+                    if (!ct.includes('text/html') && !ct.includes('application/json')) {
+                      const arr = new Uint8Array(await pdfRes.arrayBuffer());
+                      if (arr.length > 100) pdfBytes = arr;
+                    }
+                  }
+                } catch {}
+              }
+            }
+
+            if (pdfBytes && pdfBytes.length > 0) {
+              setProg(`กำลังอัปโหลดไฟล์ PDF (${i + 1}/${docs.length}): ${d.fileName || d.title}...`);
+              const fakeFile = new File([pdfBytes], d.fileName || `${d.title || idStr}.pdf`, { type: 'application/pdf' });
+              await uploadFileInChunks(idStr, fakeFile);
+              pdfMemCache.set(idStr, pdfBytes);
+              await pdfIdb.save(idStr, pdfBytes).catch(() => {});
+              importedPdfs += 1;
+            } else if (d.hasFileOnServer || d.pdfDownloadUrl) {
+              missedPdfs += 1;
+            }
+          }
+        }
+
+        for (let j = 0; j < replies.length; j++) {
+          const r = replies[j];
+          const rId = String(r.id);
+          if (existingReplyIds.has(rId)) continue;
+          if (j % 5 === 0) setProg(`กำลังนำเข้าคำตอบ (${j + 1}/${replies.length})...`);
+          const repObj = {
+            id: rId,
+            docId: r.docId || '',
+            docTitle: r.docTitle || '',
+            name: r.name || '',
+            response: r.response || '',
+            comment: r.comment || '',
+            ts: Number(r.ts) || Date.now(),
+            timeFormatted: r.timeFormatted || '',
+          };
+          try {
+            await callBackend('importReply', { reply: repObj });
+          } catch {
+            await callBackend('submitReply', { reply: repObj });
+          }
+          existingReplyIds.add(rId);
+          importedReplies += 1;
+        }
+
+        this.closeImportModal();
+        this.showSuccessModal(
+          'นำเข้าข้อมูลสำเร็จ',
+          `นำเข้าหนังสือ ${importedDocs} เรื่อง, ไฟล์ PDF ${importedPdfs} ไฟล์ และคำตอบ ${importedReplies} รายการเรียบร้อยแล้ว` +
+            (missedPdfs > 0 ? ` (มีไฟล์ PDF ${missedPdfs} ไฟล์ที่ติดล็อกอินแอปเก่า สามารถรันสคริปต์ใน Console ของแอปเก่าเพื่อดูด PDF เพิ่ม หรือกด "แก้ไข" เพื่อแนบไฟล์ใหม่)` : '')
+        );
+        await this.loadData();
       },
 
       // -------- TOAST --------
