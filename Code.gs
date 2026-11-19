@@ -26,6 +26,7 @@ var REPLY_COLUMNS = [
   'id', 'docId', 'docTitle', 'name', 'choice', 'comment', 'createdAt'
 ];
 
+var TARGET_FOLDER_ID = '1G6MroXy3X_nf3Fly3VvkjP0FDnbYMh4g';
 var FOLDER_NAME = 'ระบบหนังสือเวียนทราบ_กพ.ทบ.';
 var TMP_FOLDER_NAME = '_upload_tmp';
 
@@ -146,12 +147,21 @@ function getDb_() {
 }
 
 function getOrCreateFolder_() {
-  var folders = DriveApp.getFoldersByName(FOLDER_NAME);
-  var folder;
-  if (folders.hasNext()) {
-    folder = folders.next();
-  } else {
-    folder = DriveApp.createFolder(FOLDER_NAME);
+  var folder = null;
+  if (TARGET_FOLDER_ID) {
+    try {
+      folder = DriveApp.getFolderById(TARGET_FOLDER_ID);
+    } catch (err) {
+      folder = null;
+    }
+  }
+  if (!folder) {
+    var folders = DriveApp.getFoldersByName(FOLDER_NAME);
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(FOLDER_NAME);
+    }
   }
   try {
     folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -232,7 +242,7 @@ function getAppState() {
 }
 
 /**
- * ดึงรายการไฟล์ PDF ปัจจุบันจาก Google Drive (โฟลเดอร์ระบบ และ PDF ล่าสุดใน Drive)
+ * ดึงรายการไฟล์ PDF ปัจจุบันจากโฟลเดอร์ Google Drive หลังบ้าน และ PDF ล่าสุดใน Drive
  */
 function listDriveFiles() {
   var folder = getOrCreateFolder_();
@@ -258,7 +268,6 @@ function listDriveFiles() {
     });
   }
 
-  // ดึง PDF อื่นๆ ล่าสุดใน Google Drive เผื่อผู้ใช้อัปโหลดไว้ที่ My Drive หลัก
   try {
     var allPdfIter = DriveApp.getFilesByType(MimeType.PDF);
     var extraCount = 0;
@@ -289,14 +298,15 @@ function listDriveFiles() {
 
   return {
     success: true,
-    folderName: FOLDER_NAME,
-    folderUrl: folder.getUrl(),
+    folderId: folder.getId(),
+    folderName: folder.getName(),
+    folderUrl: 'https://drive.google.com/drive/folders/' + folder.getId(),
     files: files
   };
 }
 
 /**
- * บันทึก หรือ แก้ไขข้อมูลหนังสือเวียนทราบ
+ * บันทึก หรือ แก้ไขข้อมูลหนังสือเวียนทราบ (และนำไฟล์เข้าโฟลเดอร์หลังบ้านให้อัตโนมัติ)
  */
 function saveDocument(doc) {
   if (!doc || !doc.id) {
@@ -308,13 +318,26 @@ function saveDocument(doc) {
   var fileSize = Number(doc.fileSize) || 0;
   var mimeType = String(doc.mimeType || 'application/pdf');
 
-  // หากมีการผูกไฟล์จาก Google Drive ให้ตั้งสิทธิ์อ่านและอัปเดตชื่อ/ขนาดจริงจาก Drive
   if (driveFileId) {
     try {
+      var targetFolder = getOrCreateFolder_();
       var driveFile = DriveApp.getFileById(driveFileId);
       try {
         driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       } catch (shareErr) {}
+      try {
+        var inTarget = false;
+        var parents = driveFile.getParents();
+        while (parents.hasNext()) {
+          if (parents.next().getId() === targetFolder.getId()) {
+            inTarget = true;
+            break;
+          }
+        }
+        if (!inTarget) {
+          driveFile.moveTo(targetFolder);
+        }
+      } catch (moveErr) {}
       if (!fileName) fileName = driveFile.getName();
       if (!fileSize) fileSize = driveFile.getSize();
       mimeType = driveFile.getMimeType() || 'application/pdf';
