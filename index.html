@@ -491,13 +491,13 @@
     </div>
   </div>
 
-  <!-- ==================== SUCCESS POPUP MODAL ==================== -->
-  <div id="success-modal" onclick="if(event.target===this) app.closeSuccessModal()" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-emerald-600 text-center space-y-4">
-      <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl border border-emerald-200">✓</div>
+  <!-- ==================== RESULT POPUP MODAL (SUCCESS / ERROR / INFO) ==================== -->
+  <div id="success-modal" onclick="if(event.target===this) app.closeSuccessModal()" class="hidden fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div id="success-modal-card" class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-emerald-600 text-center space-y-4">
+      <div id="success-modal-icon" class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl border border-emerald-200 font-bold">✓</div>
       <div>
         <h3 id="success-modal-title" class="text-lg font-bold text-stone-900">บันทึกสำเร็จ</h3>
-        <p id="success-modal-desc" class="text-xs sm:text-sm text-stone-600 mt-1.5 leading-relaxed"></p>
+        <p id="success-modal-desc" class="text-xs sm:text-sm text-stone-600 mt-1.5 leading-relaxed break-words"></p>
       </div>
       <button type="button" onclick="app.closeSuccessModal()" class="w-full min-h-[44px] py-2.5 px-4 text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-xl shadow-md transition-all">
         ตกลง
@@ -505,7 +505,7 @@
     </div>
   </div>
 
-  <!-- ==================== UPLOAD PROGRESS POPUP MODAL ==================== -->
+  <!-- ==================== UPLOAD / ACTION PROGRESS POPUP MODAL ==================== -->
   <div id="upload-progress-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
     <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-md p-6 border-t-4 border-[#c9a227] space-y-4">
       <div class="flex items-center gap-3.5 min-w-0">
@@ -516,8 +516,8 @@
           </svg>
         </div>
         <div class="min-w-0 flex-1">
-          <h3 id="upload-modal-title" class="text-base font-bold text-stone-900">กำลังอัปโหลดไฟล์แนบ</h3>
-          <p id="upload-modal-filename" class="text-xs text-stone-500 truncate mt-0.5">กำลังเตรียมไฟล์...</p>
+          <h3 id="upload-modal-title" class="text-base font-bold text-stone-900">กำลังดำเนินการ</h3>
+          <p id="upload-modal-filename" class="text-xs text-stone-500 truncate mt-0.5">กำลังเตรียมข้อมูล...</p>
         </div>
         <div id="upload-modal-pct" class="text-xl font-bold font-mono-num text-[#2e3b19] shrink-0 tabular-nums">0%</div>
       </div>
@@ -527,13 +527,13 @@
           <div id="upload-modal-bar" class="h-full bg-gradient-to-r from-[#2e3b19] to-emerald-600 transition-all duration-300 ease-out w-0 rounded-full"></div>
         </div>
         <div class="flex items-center justify-between gap-2 text-[11px] font-medium text-stone-600">
-          <span id="upload-modal-step" class="truncate">กำลังเริ่มต้นอัปโหลด...</span>
+          <span id="upload-modal-step" class="truncate">กำลังเริ่มต้น...</span>
           <span id="upload-modal-chunks" class="font-mono-num shrink-0"></span>
         </div>
       </div>
 
-      <p class="text-[11px] text-center text-stone-500 bg-stone-100/80 border border-stone-200 rounded-xl px-3 py-2">
-        กรุณารอสักครู่ อย่าปิดหรือรีเฟรชหน้าต่างนี้จนกว่าจะอัปโหลดเสร็จสมบูรณ์
+      <p id="upload-modal-note" class="text-[11px] text-center text-stone-500 bg-stone-100/80 border border-stone-200 rounded-xl px-3 py-2">
+        กรุณารอสักครู่ อย่าปิดหรือรีเฟรชหน้าต่างนี้จนกว่าจะเสร็จสมบูรณ์
       </p>
     </div>
   </div>
@@ -994,7 +994,26 @@
       },
 
       async refreshData() {
-        await this.loadData(true);
+        const isAdmin = this.state.tab === 'admin' && this.state.adminUnlocked;
+        if (isAdmin) {
+          this.showUploadModal('กำลังเชื่อมต่อ Google Sheets และ Drive', 0, 'กำลังรีเฟรชข้อมูล');
+          this.setUploadModalProgress(15, 'กำลังดึงข้อมูลล่าสุดจากระบบ...', '', 88);
+        }
+        try {
+          await this.loadData(!isAdmin);
+          if (isAdmin) {
+            this.setUploadModalProgress(100, 'รีเฟรชข้อมูลเสร็จสมบูรณ์', '', 100);
+            this.hideUploadModal();
+            this.showSuccessModal('รีเฟรชข้อมูลสำเร็จ', `อัปเดตข้อมูลล่าสุดเรียบร้อยแล้ว (พบ ${this.state.docs.length} เรื่อง)`, 'success');
+          }
+        } catch (err) {
+          if (isAdmin) {
+            this.hideUploadModal();
+            this.showSuccessModal('รีเฟรชข้อมูลไม่สำเร็จ', err.message || 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
+          }
+        } finally {
+          if (isAdmin) this.hideUploadModal();
+        }
       },
 
       // -------- NAVIGATION --------
@@ -1073,7 +1092,7 @@
           document.getElementById('admin-pin-input').value = '';
           this.updateVisibleSections();
           this.renderAdminTable();
-          this.showToast('เข้าสู่ระบบผู้ดูแลเรียบร้อย', 'success');
+          this.showSuccessModal('เข้าสู่ระบบผู้ดูแลสำเร็จ', 'ปลดล็อกสิทธิ์ผู้ดูแลระบบเรียบร้อยแล้ว', 'success');
         }
       },
 
@@ -1086,13 +1105,14 @@
           const errEl = document.getElementById('admin-pin-error');
           errEl.textContent = 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
           errEl.classList.remove('hidden');
+          this.showSuccessModal('รหัสผ่านไม่ถูกต้อง', 'กรุณาตรวจสอบรหัสผู้ดูแลระบบแล้วลองใหม่อีกครั้ง', 'error');
         }
       },
 
       adminLogout() {
         this.state.adminUnlocked = false;
         this.updateVisibleSections();
-        this.showToast('ออกจากระบบผู้ดูแลเรียบร้อยแล้ว', 'info');
+        this.showSuccessModal('ออกจากระบบแล้ว', 'ออกจากระบบผู้ดูแลเรียบร้อยแล้ว', 'info');
       },
 
       // -------- READER VIEW --------
@@ -1289,6 +1309,7 @@
           input.value = '';
           info.classList.add('hidden');
           this.showAdminMsg('อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น', 'err');
+          this.showSuccessModal('ไฟล์ไม่ถูกต้อง', 'อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น', 'error');
           return;
         }
         info.innerHTML = `<span class="truncate min-w-0 flex-1">📎 พร้อมอัปโหลด: ${escHtml(f.name)} (${(f.size / 1048576).toFixed(2)} MB)</span>
@@ -1327,6 +1348,7 @@
 
         if (!title) {
           this.showAdminMsg('กรุณาระบุชื่อเรื่องหนังสือเวียนทราบ', 'err');
+          this.showSuccessModal('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุชื่อเรื่องหนังสือเวียนทราบก่อนบันทึก', 'error');
           return;
         }
 
@@ -1344,6 +1366,9 @@
           if (file) {
             this.showUploadModal(file.name, file.size, 'กำลังเพิ่มหนังสือเวียนทราบและอัปโหลดไฟล์');
             this.setUploadModalProgress(5, 'กำลังบันทึกรายละเอียดหนังสือเวียนทราบ...', '', 14);
+          } else {
+            this.showUploadModal(title, 0, 'กำลังเพิ่มหนังสือเวียนทราบ');
+            this.setUploadModalProgress(20, 'กำลังบันทึกข้อมูลลงฐานข้อมูล...', '', 85);
           }
 
           const docId = genId();
@@ -1393,6 +1418,8 @@
             if (!lastRes || !lastRes.driveFileId) {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive');
             }
+          } else {
+            this.setUploadModalProgress(100, 'บันทึกข้อมูลเรียบร้อยแล้ว', '', 100);
           }
 
           this.state.activeDocId = docId;
@@ -1407,15 +1434,18 @@
             'บันทึกสำเร็จ',
             file
               ? `เผยแพร่เรื่อง "${title}" และอัปโหลดไฟล์แนบเก็บเข้า Google Drive เรียบร้อยแล้ว`
-              : `เผยแพร่หนังสือเวียนทราบเรื่อง "${title}" เรียบร้อยแล้ว`
+              : `เผยแพร่หนังสือเวียนทราบเรื่อง "${title}" เรียบร้อยแล้ว`,
+            'success'
           );
           await this.loadData();
         } catch (err) {
+          this.hideUploadModal();
           if (docSaved) {
             await this.loadData().catch(() => {});
           }
-          this.showAdminMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึก', 'err');
-          this.showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+          const msg = err.message || 'เกิดข้อผิดพลาดในการบันทึก';
+          this.showAdminMsg(msg, 'err');
+          this.showSuccessModal('บันทึกไม่สำเร็จ', msg, 'error');
         } finally {
           this.hideUploadModal();
           if (progWrap) progWrap.classList.add('hidden');
@@ -1546,12 +1576,26 @@
         const doc = this.state.docs.find((d) => d.id === docId);
         if (!doc) return;
         const nextStatus = doc.status === 'open' ? 'closed' : 'open';
+        const actionTitle = nextStatus === 'closed' ? 'กำลังปิดรับการตอบกลับ' : 'กำลังเปิดรับคำตอบอีกครั้ง';
+        this.showUploadModal(doc.title, 0, actionTitle);
+        this.setUploadModalProgress(20, 'กำลังอัปเดตสถานะในระบบ...', '', 88);
         try {
           await callBackend('toggleStatus', { docId, status: nextStatus });
-          this.showToast(nextStatus === 'closed' ? 'ปิดรับการตอบกลับแล้ว (ไฟล์แนบยังคงเก็บใน Drive)' : 'เปิดรับคำตอบอีกครั้ง', 'success');
+          this.setUploadModalProgress(100, 'อัปเดตสถานะเรียบร้อยแล้ว', '', 100);
+          this.hideUploadModal();
+          this.showSuccessModal(
+            nextStatus === 'closed' ? 'ปิดรับคำตอบแล้ว' : 'เปิดรับคำตอบแล้ว',
+            nextStatus === 'closed'
+              ? `ปิดรับการตอบกลับเรื่อง "${doc.title}" เรียบร้อยแล้ว (ไฟล์แนบยังคงเก็บใน Google Drive)`
+              : `เปิดรับคำตอบเรื่อง "${doc.title}" อีกครั้งเรียบร้อยแล้ว`,
+            'success'
+          );
           await this.loadData();
         } catch (err) {
-          this.showToast('เปลี่ยนสถานะไม่สำเร็จ: ' + err.message, 'error');
+          this.hideUploadModal();
+          this.showSuccessModal('เปลี่ยนสถานะไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
+        } finally {
+          this.hideUploadModal();
         }
       },
 
@@ -1562,14 +1606,21 @@
           'ยืนยันการลบหนังสือเวียนทราบ',
           `ต้องการลบเรื่อง "${doc.title}" พร้อมไฟล์แนบและข้อมูลการตอบกลับทั้งหมดใช่หรือไม่?`,
           async () => {
+            this.showUploadModal(doc.title, 0, 'กำลังลบหนังสือเวียนทราบ');
+            this.setUploadModalProgress(20, 'กำลังลบข้อมูลและไฟล์แนบออกจาก Google Drive...', '', 88);
             try {
               await callBackend('deleteDoc', { docId });
               invalidatePdfCache(docId);
               await pdfIdb.remove(docId).catch(() => {});
-              this.showToast('ลบหนังสือเวียนทราบเรียบร้อย', 'success');
+              this.setUploadModalProgress(100, 'ลบรายการเรียบร้อยแล้ว', '', 100);
+              this.hideUploadModal();
+              this.showSuccessModal('ลบสำเร็จ', `ลบหนังสือเวียนทราบเรื่อง "${doc.title}" เรียบร้อยแล้ว`, 'success');
               await this.loadData();
             } catch (err) {
-              this.showToast('ลบรายการไม่สำเร็จ: ' + err.message, 'error');
+              this.hideUploadModal();
+              this.showSuccessModal('ลบรายการไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
+            } finally {
+              this.hideUploadModal();
             }
           }
         );
@@ -1582,14 +1633,21 @@
           'ยืนยันการลบไฟล์แนบ',
           `ต้องการลบเฉพาะไฟล์แนบของเรื่อง "${doc.title}" ออกจาก Google Drive ใช่หรือไม่?`,
           async () => {
+            this.showUploadModal(doc.fileName || doc.title, 0, 'กำลังลบไฟล์แนบ');
+            this.setUploadModalProgress(20, 'กำลังลบไฟล์แนบออกจาก Google Drive...', '', 88);
             try {
               await callBackend('deleteAttachment', { docId });
               invalidatePdfCache(docId);
               await pdfIdb.remove(docId).catch(() => {});
-              this.showToast('ลบไฟล์แนบเรียบร้อย', 'success');
+              this.setUploadModalProgress(100, 'ลบไฟล์แนบเรียบร้อยแล้ว', '', 100);
+              this.hideUploadModal();
+              this.showSuccessModal('ลบไฟล์แนบสำเร็จ', `ลบไฟล์แนบของเรื่อง "${doc.title}" ออกจาก Google Drive เรียบร้อยแล้ว`, 'success');
               await this.loadData();
             } catch (err) {
-              this.showToast('ลบไฟล์แนบไม่สำเร็จ: ' + err.message, 'error');
+              this.hideUploadModal();
+              this.showSuccessModal('ลบไฟล์แนบไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
+            } finally {
+              this.hideUploadModal();
             }
           }
         );
@@ -1601,9 +1659,12 @@
         const okBtn = document.getElementById('confirm-ok-btn');
         okBtn.onclick = async () => {
           okBtn.disabled = true;
-          await onConfirm();
-          okBtn.disabled = false;
           this.closeConfirmModal();
+          try {
+            await onConfirm();
+          } finally {
+            okBtn.disabled = false;
+          }
         };
         document.getElementById('confirm-modal').classList.remove('hidden');
       },
@@ -1681,6 +1742,7 @@
           if (newBox) newBox.classList.add('hidden');
           err.textContent = 'อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น';
           err.classList.remove('hidden');
+          this.showSuccessModal('ไฟล์ไม่ถูกต้อง', 'อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น', 'error');
           return;
         }
 
@@ -1726,6 +1788,7 @@
           errEl.textContent = 'กรุณาระบุชื่อเรื่อง';
           errEl.classList.remove('hidden');
           errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          this.showSuccessModal('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุชื่อเรื่องก่อนบันทึกการแก้ไข', 'error');
           return;
         }
 
@@ -1742,7 +1805,16 @@
           const fileInput = document.getElementById('edit-file');
           const newFile = fileInput.files && fileInput.files[0];
 
+          if (newFile) {
+            this.showUploadModal(newFile.name, newFile.size, 'กำลังบันทึกแก้ไขและอัปโหลดไฟล์ใหม่');
+            this.setUploadModalProgress(6, 'กำลังเตรียมข้อมูล...', '', 16);
+          } else {
+            this.showUploadModal(title, 0, 'กำลังบันทึกการแก้ไข');
+            this.setUploadModalProgress(20, 'กำลังอัปเดตข้อมูลในระบบ...', '', 85);
+          }
+
           if (this.state.editRemoveFile && (doc.driveFileId || doc.fileName)) {
+            this.setUploadModalProgress(25, 'กำลังลบไฟล์แนบเดิมออกจาก Google Drive...', '', 45);
             await callBackend('deleteAttachment', { docId: doc.id });
             invalidatePdfCache(doc.id);
             await pdfIdb.remove(doc.id).catch(() => {});
@@ -1773,8 +1845,6 @@
           };
 
           if (newFile) {
-            this.showUploadModal(newFile.name, newFile.size, 'กำลังอัปโหลดไฟล์แนบใหม่');
-            this.setUploadModalProgress(8, 'กำลังเตรียมไฟล์ PDF ใหม่...', '', 20);
             invalidatePdfCache(doc.id);
             const progressBar = document.getElementById('edit-upload-progress-bar');
             const progressPct = document.getElementById('edit-upload-progress-pct');
@@ -1808,9 +1878,7 @@
           }
 
           await callBackend('saveDoc', { doc: updatedDoc });
-          if (newFile) {
-            this.setUploadModalProgress(100, 'อัปโหลดและบันทึกเรียบร้อยแล้ว', '', 100);
-          }
+          this.setUploadModalProgress(100, newFile ? 'อัปโหลดและบันทึกเรียบร้อยแล้ว' : 'บันทึกการแก้ไขเรียบร้อยแล้ว', '', 100);
 
           const localIdx = this.state.docs.findIndex((d) => d.id === doc.id);
           if (localIdx >= 0) {
@@ -1820,12 +1888,14 @@
 
           this.hideUploadModal();
           this.closeEditModal();
-          this.showSuccessModal('บันทึกสำเร็จ', `อัปเดตข้อมูลเรื่อง "${title}" เรียบร้อยแล้ว`);
+          this.showSuccessModal('บันทึกสำเร็จ', `อัปเดตข้อมูลเรื่อง "${title}" เรียบร้อยแล้ว`, 'success');
           await this.loadData();
         } catch (err) {
+          this.hideUploadModal();
           errEl.textContent = 'บันทึกการแก้ไขไม่สำเร็จ: ' + err.message;
           errEl.classList.remove('hidden');
           errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          this.showSuccessModal('บันทึกการแก้ไขไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
         } finally {
           this.hideUploadModal();
           if (progWrap) progWrap.classList.add('hidden');
@@ -1853,7 +1923,7 @@
         if (titleEl) titleEl.textContent = title;
         if (fileEl) {
           const sizeTxt = fileSize ? ` (${(Number(fileSize) / 1048576).toFixed(2)} MB)` : '';
-          fileEl.textContent = fileName ? `${fileName}${sizeTxt}` : 'กำลังเตรียมไฟล์...';
+          fileEl.textContent = fileName ? `${fileName}${sizeTxt}` : 'กำลังเตรียมข้อมูล...';
         }
         if (pctEl) pctEl.textContent = '0%';
         if (barEl) barEl.style.width = '0%';
@@ -1899,7 +1969,24 @@
         if (modal) modal.classList.add('hidden');
       },
 
-      showSuccessModal(title = 'บันทึกสำเร็จ', desc = '') {
+      showSuccessModal(title = 'บันทึกสำเร็จ', desc = '', type = 'success') {
+        const card = document.getElementById('success-modal-card');
+        const icon = document.getElementById('success-modal-icon');
+        if (card && icon) {
+          if (type === 'error') {
+            card.className = 'bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-red-600 text-center space-y-4';
+            icon.className = 'w-14 h-14 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center text-3xl border border-red-200 font-bold';
+            icon.textContent = '!';
+          } else if (type === 'info') {
+            card.className = 'bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-[#c9a227] text-center space-y-4';
+            icon.className = 'w-14 h-14 mx-auto rounded-full bg-[#f4f7ec] text-[#2e3b19] flex items-center justify-center text-2xl border border-[#cad5b2] font-bold';
+            icon.textContent = 'ℹ';
+          } else {
+            card.className = 'bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-sm p-6 border-t-4 border-emerald-600 text-center space-y-4';
+            icon.className = 'w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl border border-emerald-200 font-bold';
+            icon.textContent = '✓';
+          }
+        }
         document.getElementById('success-modal-title').textContent = title;
         document.getElementById('success-modal-desc').textContent = desc;
         document.getElementById('success-modal').classList.remove('hidden');
@@ -2413,6 +2500,7 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
+        this.showSuccessModal('ส่งออกรายงานสำเร็จ', `ดาวน์โหลดไฟล์รายงาน CSV (${docReplies.length} รายการ) เรียบร้อยแล้ว`, 'success');
       },
 
       // -------- TOAST --------
