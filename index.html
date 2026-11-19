@@ -505,6 +505,39 @@
     </div>
   </div>
 
+  <!-- ==================== UPLOAD PROGRESS POPUP MODAL ==================== -->
+  <div id="upload-progress-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-md p-6 border-t-4 border-[#c9a227] space-y-4">
+      <div class="flex items-center gap-3.5 min-w-0">
+        <div class="w-12 h-12 rounded-xl bg-[#edf2e0] text-[#2e3b19] flex items-center justify-center border border-[#cad5b2] shrink-0">
+          <svg class="w-6 h-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="9" class="opacity-25"></circle>
+            <path d="M21 12a9 9 0 0 0-9-9" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h3 id="upload-modal-title" class="text-base font-bold text-stone-900">กำลังอัปโหลดไฟล์แนบ</h3>
+          <p id="upload-modal-filename" class="text-xs text-stone-500 truncate mt-0.5">กำลังเตรียมไฟล์...</p>
+        </div>
+        <div id="upload-modal-pct" class="text-xl font-bold font-mono-num text-[#2e3b19] shrink-0 tabular-nums">0%</div>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="w-full h-3.5 bg-stone-200 rounded-full overflow-hidden shadow-inner border border-stone-300/60">
+          <div id="upload-modal-bar" class="h-full bg-gradient-to-r from-[#2e3b19] to-emerald-600 transition-all duration-300 ease-out w-0 rounded-full"></div>
+        </div>
+        <div class="flex items-center justify-between gap-2 text-[11px] font-medium text-stone-600">
+          <span id="upload-modal-step" class="truncate">กำลังเริ่มต้นอัปโหลด...</span>
+          <span id="upload-modal-chunks" class="font-mono-num shrink-0"></span>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-center text-stone-500 bg-stone-100/80 border border-stone-200 rounded-xl px-3 py-2">
+        กรุณารอสักครู่ อย่าปิดหรือรีเฟรชหน้าต่างนี้จนกว่าจะอัปโหลดเสร็จสมบูรณ์
+      </p>
+    </div>
+  </div>
+
   <!-- ==================== TOAST NOTIFICATION ==================== -->
   <div id="toast-box" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-24px)] w-max text-center px-4 py-2.5 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold border transition-all"></div>
 
@@ -1308,6 +1341,11 @@
             throw new Error('อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น');
           }
 
+          if (file) {
+            this.showUploadModal(file.name, file.size, 'กำลังเพิ่มหนังสือเวียนทราบและอัปโหลดไฟล์');
+            this.setUploadModalProgress(5, 'กำลังบันทึกรายละเอียดหนังสือเวียนทราบ...', '', 14);
+          }
+
           const docId = genId();
           const newDoc = {
             id: docId,
@@ -1332,15 +1370,24 @@
             const progressPct = document.getElementById('upload-progress-pct');
             const progressText = document.getElementById('upload-progress-text');
             if (progWrap) progWrap.classList.remove('hidden');
+            this.setUploadModalProgress(15, 'กำลังเตรียมข้อมูลไฟล์ PDF...', '', 24);
 
             const { bytes, lastRes } = await uploadFileInChunks(docId, file, (curr, total, pct) => {
               const displayPct = pct != null ? pct : (total > 0 ? Math.round((curr / total) * 100) : 0);
+              const ceiling = displayPct >= 98 ? displayPct : Math.min(93, Math.max(displayPct + 5, Math.round(((curr + 1) / Math.max(1, total)) * 92)));
               if (progressBar) progressBar.style.width = displayPct + '%';
               if (progressPct) progressPct.textContent = displayPct + '%';
               if (progressText) progressText.textContent = `กำลังอัปโหลดไฟล์ขึ้น Google Drive (${curr}/${total} ชิ้น)...`;
               btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span> กำลังอัปโหลด (${displayPct}%)...`;
+              this.setUploadModalProgress(
+                displayPct,
+                displayPct >= 98 ? 'กำลังบันทึกไฟล์เข้า Google Drive...' : 'กำลังอัปโหลดไฟล์เข้า Google Drive...',
+                total > 1 ? `ส่วนที่ ${Math.min(curr + 1, total)}/${total}` : '',
+                ceiling
+              );
               this.showAdminMsg(`กำลังอัปโหลดไฟล์แนบขึ้น Google Drive (${curr}/${total} — ${displayPct}%)...`, 'info');
             });
+            this.setUploadModalProgress(100, 'อัปโหลดและเชื่อมต่อไฟล์เรียบร้อยแล้ว', '', 100);
             pdfMemCache.set(docId, bytes);
             await pdfIdb.save(docId, bytes).catch(() => {});
             if (!lastRes || !lastRes.driveFileId) {
@@ -1354,6 +1401,7 @@
           this.toggleAddDeadlineField();
           document.getElementById('add-deadline').value = toDatetimeLocalValue(Date.now() + CONFIG.DEFAULT_DEADLINE_MS);
 
+          this.hideUploadModal();
           document.getElementById('admin-status-msg').classList.add('hidden');
           this.showSuccessModal(
             'บันทึกสำเร็จ',
@@ -1369,6 +1417,7 @@
           this.showAdminMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึก', 'err');
           this.showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
         } finally {
+          this.hideUploadModal();
           if (progWrap) progWrap.classList.add('hidden');
           btn.innerHTML = '<span>เผยแพร่หนังสือเวียนทราบ</span>';
           btn.disabled = false;
@@ -1724,6 +1773,8 @@
           };
 
           if (newFile) {
+            this.showUploadModal(newFile.name, newFile.size, 'กำลังอัปโหลดไฟล์แนบใหม่');
+            this.setUploadModalProgress(8, 'กำลังเตรียมไฟล์ PDF ใหม่...', '', 20);
             invalidatePdfCache(doc.id);
             const progressBar = document.getElementById('edit-upload-progress-bar');
             const progressPct = document.getElementById('edit-upload-progress-pct');
@@ -1732,12 +1783,19 @@
 
             const { bytes, lastRes } = await uploadFileInChunks(doc.id, newFile, (curr, total, pct) => {
               const displayPct = pct != null ? pct : (total > 0 ? Math.round((curr / total) * 100) : 0);
+              const ceiling = displayPct >= 98 ? displayPct : Math.min(93, Math.max(displayPct + 5, Math.round(((curr + 1) / Math.max(1, total)) * 92)));
               if (progressBar) progressBar.style.width = displayPct + '%';
               if (progressPct) progressPct.textContent = displayPct + '%';
               if (progressText) progressText.textContent = `กำลังอัปโหลดไฟล์ใหม่ขึ้น Google Drive (${curr}/${total} ชิ้น)...`;
               btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span> กำลังอัปโหลด (${displayPct}%)...`;
-              this.showToast(`กำลังอัปโหลดไฟล์ใหม่ (${curr}/${total} — ${displayPct}%)...`, 'info');
+              this.setUploadModalProgress(
+                displayPct,
+                displayPct >= 98 ? 'กำลังบันทึกไฟล์เข้า Google Drive...' : 'กำลังอัปโหลดไฟล์ใหม่เข้า Google Drive...',
+                total > 1 ? `ส่วนที่ ${Math.min(curr + 1, total)}/${total}` : '',
+                ceiling
+              );
             });
+            this.setUploadModalProgress(96, 'กำลังบันทึกรายละเอียดหนังสือเวียนทราบ...', '', 98);
             pdfMemCache.set(doc.id, bytes);
             await pdfIdb.save(doc.id, bytes).catch(() => {});
             if (lastRes && lastRes.driveFileId) {
@@ -1750,6 +1808,9 @@
           }
 
           await callBackend('saveDoc', { doc: updatedDoc });
+          if (newFile) {
+            this.setUploadModalProgress(100, 'อัปโหลดและบันทึกเรียบร้อยแล้ว', '', 100);
+          }
 
           const localIdx = this.state.docs.findIndex((d) => d.id === doc.id);
           if (localIdx >= 0) {
@@ -1757,6 +1818,7 @@
           }
           this.renderAll();
 
+          this.hideUploadModal();
           this.closeEditModal();
           this.showSuccessModal('บันทึกสำเร็จ', `อัปเดตข้อมูลเรื่อง "${title}" เรียบร้อยแล้ว`);
           await this.loadData();
@@ -1765,10 +1827,76 @@
           errEl.classList.remove('hidden');
           errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } finally {
+          this.hideUploadModal();
           if (progWrap) progWrap.classList.add('hidden');
           btn.innerHTML = '<span>บันทึกการแก้ไข</span>';
           btn.disabled = false;
         }
+      },
+
+      showUploadModal(fileName = '', fileSize = 0, title = 'กำลังอัปโหลดไฟล์แนบ') {
+        if (this._uploadTicker) {
+          clearInterval(this._uploadTicker);
+          this._uploadTicker = null;
+        }
+        this._uploadCurrentPct = 0;
+        this._uploadCeilingPct = 0;
+
+        const modal = document.getElementById('upload-progress-modal');
+        const titleEl = document.getElementById('upload-modal-title');
+        const fileEl = document.getElementById('upload-modal-filename');
+        const pctEl = document.getElementById('upload-modal-pct');
+        const barEl = document.getElementById('upload-modal-bar');
+        const stepEl = document.getElementById('upload-modal-step');
+        const chunksEl = document.getElementById('upload-modal-chunks');
+
+        if (titleEl) titleEl.textContent = title;
+        if (fileEl) {
+          const sizeTxt = fileSize ? ` (${(Number(fileSize) / 1048576).toFixed(2)} MB)` : '';
+          fileEl.textContent = fileName ? `${fileName}${sizeTxt}` : 'กำลังเตรียมไฟล์...';
+        }
+        if (pctEl) pctEl.textContent = '0%';
+        if (barEl) barEl.style.width = '0%';
+        if (stepEl) stepEl.textContent = 'กำลังเริ่มต้น...';
+        if (chunksEl) chunksEl.textContent = '';
+        if (modal) modal.classList.remove('hidden');
+
+        this._uploadTicker = setInterval(() => {
+          if (this._uploadCurrentPct < this._uploadCeilingPct) {
+            const gap = this._uploadCeilingPct - this._uploadCurrentPct;
+            const step = gap > 20 ? 2 : 1;
+            this._uploadCurrentPct = Math.min(this._uploadCeilingPct, this._uploadCurrentPct + step);
+            const p = document.getElementById('upload-modal-pct');
+            const b = document.getElementById('upload-modal-bar');
+            if (p) p.textContent = this._uploadCurrentPct + '%';
+            if (b) b.style.width = this._uploadCurrentPct + '%';
+          }
+        }, 350);
+      },
+
+      setUploadModalProgress(pct, stepText = '', chunksText = '', ceilingPct = null) {
+        const clamped = Math.max(this._uploadCurrentPct || 0, Math.min(100, Math.round(pct || 0)));
+        this._uploadCurrentPct = clamped;
+        this._uploadCeilingPct = ceilingPct != null ? Math.max(clamped, Math.min(100, Math.round(ceilingPct))) : clamped;
+
+        const pctEl = document.getElementById('upload-modal-pct');
+        const barEl = document.getElementById('upload-modal-bar');
+        const stepEl = document.getElementById('upload-modal-step');
+        const chunksEl = document.getElementById('upload-modal-chunks');
+
+        if (pctEl) pctEl.textContent = clamped + '%';
+        if (barEl) barEl.style.width = clamped + '%';
+        if (stepEl && stepText) stepEl.textContent = stepText;
+        if (chunksEl) chunksEl.textContent = chunksText || '';
+      },
+
+      hideUploadModal() {
+        if (this._uploadTicker) {
+          clearInterval(this._uploadTicker);
+          this._uploadTicker = null;
+        }
+        const modal = document.getElementById('upload-progress-modal');
+        if (modal) modal.classList.add('hidden');
       },
 
       showSuccessModal(title = 'บันทึกสำเร็จ', desc = '') {
