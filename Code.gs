@@ -12,7 +12,7 @@
  * 6. กด แก้ไข (ไอคอนรูปดินสอ)
  * 7. ที่ช่อง "เวอร์ชัน" (Version) ให้เลือก "เวอร์ชันใหม่" (New version) *** สำคัญมาก ***
  * 8. ที่ช่อง "ผู้มีสิทธิ์เข้าถึง" (Who has access) ให้เลือก "ทุกคน" (Anyone)
- * 9. กด ทำให้ใช้งานได้ (Deploy) แล้วคัดลอก Web App URL (ลงท้ายด้วย /exec)
+ * 9. กด ทำให้ใช้งานได้ (Deploy)
  * ============================================================================
  */
 
@@ -27,6 +27,7 @@ var REPLY_COLUMNS = [
 ];
 
 var FOLDER_NAME = 'ระบบหนังสือเวียนทราบ_กพ.ทบ.';
+var TMP_FOLDER_NAME = '_upload_tmp';
 
 // ----------------------------------------------------------------------------
 // HTTP ENDPOINTS (GET & POST)
@@ -40,6 +41,8 @@ function doGet(e) {
       return jsonResponse_(getAppState());
     } else if (action === 'getPdf') {
       return jsonResponse_(getPdfBase64(params.fileId));
+    } else if (action === 'listDriveFiles') {
+      return jsonResponse_(listDriveFiles());
     }
     return jsonResponse_({
       success: true,
@@ -54,7 +57,6 @@ function doGet(e) {
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
-    // รอ Lock สูงสุด 30 วินาที เพื่อป้องกันการเขียนพร้อมกัน
     lock.waitLock(30000);
   } catch (lockErr) {
     return jsonResponse_({ success: false, error: 'ระบบไม่ว่าง กำลังมีผู้ใช้งานอื่นบันทึก กรุณาลองใหม่อีกครั้ง: ' + lockErr.toString() });
@@ -77,6 +79,8 @@ function doPost(e) {
 
     if (action === 'getState') {
       result = getAppState();
+    } else if (action === 'listDriveFiles') {
+      result = listDriveFiles();
     } else if (action === 'saveDoc') {
       result = saveDocument(data.doc);
     } else if (action === 'uploadChunk') {
@@ -93,10 +97,6 @@ function doPost(e) {
       result = incrementDocView(data.docId);
     } else if (action === 'getPdf') {
       result = getPdfBase64(data.fileId);
-    } else if (action === 'importDoc') {
-      result = importDocument(data.doc);
-    } else if (action === 'importReply') {
-      result = importReply(data.reply);
     } else {
       result = { success: false, error: 'ไม่พบคำสั่งที่ระบุ: ' + action };
     }
@@ -107,7 +107,7 @@ function doPost(e) {
   } finally {
     try {
       lock.releaseLock();
-    } catch (e) {}
+    } catch (releaseErr) {}
   }
 }
 
@@ -117,7 +117,7 @@ function jsonResponse_(obj) {
 }
 
 // ----------------------------------------------------------------------------
-// DATABASE HELPER (SPREADSHEET SHEETS)
+// DATABASE & DRIVE HELPERS
 // ----------------------------------------------------------------------------
 
 function getDb_() {
@@ -159,6 +159,15 @@ function getOrCreateFolder_() {
   return folder;
 }
 
+function getOrCreateTempFolder_() {
+  var rootFolder = getOrCreateFolder_();
+  var subs = rootFolder.getFoldersByName(TMP_FOLDER_NAME);
+  if (subs.hasNext()) {
+    return subs.next();
+  }
+  return rootFolder.createFolder(TMP_FOLDER_NAME);
+}
+
 // ----------------------------------------------------------------------------
 // CORE ACTIONS
 // ----------------------------------------------------------------------------
@@ -193,7 +202,6 @@ function getAppState() {
     }
   }
 
-  // เรียงลำดับตามวันที่สร้างล่าสุดอยู่บน
   docs.sort(function(a, b) {
     return (b.createdAt || 0) - (a.createdAt || 0);
   });
@@ -204,19 +212,87 @@ function getAppState() {
     for (var j = 1; j < replyData.length; j++) {
       var rRow = replyData[j];
       if (!rRow[0]) continue;
+      var choiceVal = String(rRow[4] || '');
+      var tsVal = Number(rRow[6]) || 0;
       replies.push({
         id: String(rRow[0]),
         docId: String(rRow[1] || ''),
         docTitle: String(rRow[2] || ''),
         name: String(rRow[3] || ''),
-        choice: String(rRow[4] || ''),
+        choice: choiceVal,
+        response: choiceVal,
         comment: String(rRow[5] || ''),
-        createdAt: Number(rRow[6]) || 0
+        createdAt: tsVal,
+        ts: tsVal
       });
     }
   }
 
   return { success: true, docs: docs, replies: replies };
+}
+
+/**
+ * ดึงรายการไฟล์ PDF ปัจจุบันจาก Google Drive (โฟลเดอร์ระบบ และ PDF ล่าสุดใน Drive)
+ */
+function listDriveFiles() {
+  var folder = getOrCreateFolder_();
+  var files = [];
+  var seenIds = {};
+
+  var folderIter = folder.getFiles();
+  while (folderIter.hasNext()) {
+    var f = folderIter.next();
+    if (f.isTrashed()) continue;
+    var name = f.getName();
+    var mime = f.getMimeType() || '';
+    if (mime !== 'application/pdf' && name.toLowerCase().slice(-4) !== '.pdf') continue;
+    var id = f.getId();
+    seenIds[id] = true;
+    files.push({
+      id: id,
+      name: name,
+      size: f.getSize(),
+      mimeType: mime || 'application/pdf',
+      updatedAt: f.getLastUpdated() ? f.getLastUpdated().getTime() : 0,
+      inSystemFolder: true
+    });
+  }
+
+  // ดึง PDF อื่นๆ ล่าสุดใน Google Drive เผื่อผู้ใช้อัปโหลดไว้ที่ My Drive หลัก
+  try {
+    var allPdfIter = DriveApp.getFilesByType(MimeType.PDF);
+    var extraCount = 0;
+    while (allPdfIter.hasNext() && extraCount < 30) {
+      var pf = allPdfIter.next();
+      if (pf.isTrashed()) continue;
+      var pid = pf.getId();
+      if (seenIds[pid]) continue;
+      var pname = pf.getName() || '';
+      if (pname.slice(-5) === '.part') continue;
+      seenIds[pid] = true;
+      extraCount++;
+      files.push({
+        id: pid,
+        name: pname,
+        size: pf.getSize(),
+        mimeType: pf.getMimeType() || 'application/pdf',
+        updatedAt: pf.getLastUpdated() ? pf.getLastUpdated().getTime() : 0,
+        inSystemFolder: false
+      });
+    }
+  } catch (e) {}
+
+  files.sort(function(a, b) {
+    if (a.inSystemFolder !== b.inSystemFolder) return a.inSystemFolder ? -1 : 1;
+    return (b.updatedAt || 0) - (a.updatedAt || 0);
+  });
+
+  return {
+    success: true,
+    folderName: FOLDER_NAME,
+    folderUrl: folder.getUrl(),
+    files: files
+  };
 }
 
 /**
@@ -226,6 +302,27 @@ function saveDocument(doc) {
   if (!doc || !doc.id) {
     throw new Error('ข้อมูลหนังสือเวียนทราบไม่ถูกต้อง (Missing doc.id)');
   }
+
+  var driveFileId = String(doc.driveFileId || '');
+  var fileName = String(doc.fileName || '');
+  var fileSize = Number(doc.fileSize) || 0;
+  var mimeType = String(doc.mimeType || 'application/pdf');
+
+  // หากมีการผูกไฟล์จาก Google Drive ให้ตั้งสิทธิ์อ่านและอัปเดตชื่อ/ขนาดจริงจาก Drive
+  if (driveFileId) {
+    try {
+      var driveFile = DriveApp.getFileById(driveFileId);
+      try {
+        driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      } catch (shareErr) {}
+      if (!fileName) fileName = driveFile.getName();
+      if (!fileSize) fileSize = driveFile.getSize();
+      mimeType = driveFile.getMimeType() || 'application/pdf';
+    } catch (fileErr) {
+      throw new Error('ไม่พบไฟล์ใน Google Drive (ID: ' + driveFileId + '): ' + fileErr.toString());
+    }
+  }
+
   var db = getDb_();
   var sheet = db.docs;
   var data = sheet.getDataRange().getValues();
@@ -233,7 +330,7 @@ function saveDocument(doc) {
 
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(doc.id)) {
-      foundRow = i + 1; // 1-indexed
+      foundRow = i + 1;
       break;
     }
   }
@@ -242,10 +339,10 @@ function saveDocument(doc) {
     String(doc.id),
     String(doc.title || ''),
     String(doc.description || ''),
-    String(doc.fileName || ''),
-    String(doc.driveFileId || ''),
-    String(doc.mimeType || 'application/pdf'),
-    Number(doc.fileSize) || 0,
+    fileName,
+    driveFileId,
+    mimeType,
+    fileSize,
     Number(doc.createdAt) || Date.now(),
     Number(doc.deadline) || 0,
     String(doc.status || 'open'),
@@ -256,7 +353,6 @@ function saveDocument(doc) {
   ];
 
   if (foundRow > 0) {
-    // ถ้ารายการเดิมมี driveFileId อยู่แล้ว และข้อมูลที่ส่งมาไม่ได้สั่งลบ (fileName ยังมี) ให้เก็บ driveFileId เดิมไว้
     var oldDriveFileId = String(data[foundRow - 1][4] || '');
     if (oldDriveFileId && !rowValues[4] && rowValues[3]) {
       rowValues[4] = oldDriveFileId;
@@ -266,42 +362,69 @@ function saveDocument(doc) {
     sheet.appendRow(rowValues);
   }
 
-  return { success: true, docId: doc.id };
+  return { success: true, docId: doc.id, driveFileId: rowValues[4], fileName: rowValues[3], fileSize: rowValues[6] };
 }
 
 /**
- * อัปโหลดไฟล์แบบ Chunked (ทีละชิ้น) และรวมไฟล์บันทึกเข้า Google Drive อย่างถาวร
+ * อัปโหลดไฟล์เข้า Google Drive ถาวร (ไม่มีขีดจำกัด CacheService 100KB และไม่มีปัญหา Base64 padding)
  */
 function uploadFileChunk(docId, index, total, chunkBase64, fileName, mimeType) {
   if (!docId) throw new Error('Missing docId');
-  var cache = CacheService.getScriptCache();
-  var cacheKey = 'chk_' + docId + '_' + index;
-
-  // บันทึกชิ้นส่วนลง CacheService (อยู่ได้ 6 ชั่วโมง)
-  cache.put(cacheKey, chunkBase64, 21600);
-
-  // ถ้ายังไม่ใช่ชิ้นสุดท้าย ให้ตอบรับชิ้นส่วน
-  if (Number(index) < Number(total) - 1) {
-    return { success: true, completed: false, index: index, total: total };
-  }
-
-  // ชิ้นสุดท้าย: รวบรวมชิ้นส่วนทั้งหมดเข้าด้วยกัน
-  var fullBase64 = '';
-  for (var i = 0; i < total; i++) {
-    var k = 'chk_' + docId + '_' + i;
-    var piece = (i === index) ? chunkBase64 : cache.get(k);
-    if (!piece) {
-      throw new Error('ชิ้นส่วนไฟล์ที่ ' + (i + 1) + ' ขาดหาย กรุณาอัปโหลดไฟล์ใหม่อีกครั้ง');
-    }
-    fullBase64 += piece;
-  }
-
-  var bytes = Utilities.base64Decode(fullBase64);
-  var blob = Utilities.newBlob(bytes, mimeType || 'application/pdf', fileName || ('doc_' + docId + '.pdf'));
-
-  // บันทึกไฟล์ลง Google Drive
+  var idx = Number(index) || 0;
+  var tot = Math.max(1, Number(total) || 1);
+  var safeName = fileName || ('doc_' + docId + '.pdf');
+  var safeMime = mimeType || 'application/pdf';
   var folder = getOrCreateFolder_();
-  var file = folder.createFile(blob);
+  var file;
+
+  if (tot === 1) {
+    // อัปโหลดรวดเดียวเสร็จทันที (ไม่ผ่าน CacheService)
+    var singleBytes = Utilities.base64Decode(chunkBase64);
+    var singleBlob = Utilities.newBlob(singleBytes, safeMime, safeName);
+    file = folder.createFile(singleBlob);
+  } else {
+    // กรณีไฟล์ใหญ่มาก แบ่งเก็บชิ้นส่วนไบนารีในโฟลเดอร์ชั่วคราว _upload_tmp
+    var tmpFolder = getOrCreateTempFolder_();
+    var partName = docId + '_' + idx + '.part';
+    var existingParts = tmpFolder.getFilesByName(partName);
+    while (existingParts.hasNext()) {
+      existingParts.next().setTrashed(true);
+    }
+
+    var partBytes = Utilities.base64Decode(chunkBase64);
+    tmpFolder.createFile(Utilities.newBlob(partBytes, 'application/octet-stream', partName));
+
+    if (idx < tot - 1) {
+      return { success: true, completed: false, index: idx, total: tot };
+    }
+
+    // ชิ้นสุดท้าย: รวมไบต์จากทุกชิ้นส่วนตามลำดับ
+    var allBytes = [];
+    var trashList = [];
+    for (var i = 0; i < tot; i++) {
+      var pName = docId + '_' + i + '.part';
+      var pIter = tmpFolder.getFilesByName(pName);
+      if (!pIter.hasNext()) {
+        throw new Error('ชิ้นส่วนไฟล์ที่ ' + (i + 1) + ' ขาดหาย กรุณาอัปโหลดไฟล์ใหม่อีกครั้ง');
+      }
+      var pFile = pIter.next();
+      var pBytes = pFile.getBlob().getBytes();
+      for (var b = 0; b < pBytes.length; b++) {
+        allBytes.push(pBytes[b]);
+      }
+      trashList.push(pFile);
+    }
+
+    var finalBlob = Utilities.newBlob(allBytes, safeMime, safeName);
+    file = folder.createFile(finalBlob);
+
+    for (var t = 0; t < trashList.length; t++) {
+      try {
+        trashList[t].setTrashed(true);
+      } catch (e) {}
+    }
+  }
+
   try {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   } catch (e) {}
@@ -309,21 +432,15 @@ function uploadFileChunk(docId, index, total, chunkBase64, fileName, mimeType) {
   var fileId = file.getId();
   var fileSize = file.getSize();
 
-  // ล้างชิ้นส่วนในแคช
-  for (var c = 0; c < total; c++) {
-    cache.remove('chk_' + docId + '_' + c);
-  }
-
-  // อัปเดตข้อมูลแถวใน Google Sheets ให้มี driveFileId, fileName, fileSize ทันที
   var db = getDb_();
   var sheet = db.docs;
   var data = sheet.getDataRange().getValues();
   for (var r = 1; r < data.length; r++) {
     if (String(data[r][0]) === String(docId)) {
-      sheet.getRange(r + 1, 4).setValue(fileName); // fileName (col 4)
-      sheet.getRange(r + 1, 5).setValue(fileId);   // driveFileId (col 5)
-      sheet.getRange(r + 1, 6).setValue(mimeType || 'application/pdf'); // mimeType (col 6)
-      sheet.getRange(r + 1, 7).setValue(fileSize); // fileSize (col 7)
+      sheet.getRange(r + 1, 4).setValue(safeName);
+      sheet.getRange(r + 1, 5).setValue(fileId);
+      sheet.getRange(r + 1, 6).setValue(safeMime);
+      sheet.getRange(r + 1, 7).setValue(fileSize);
       break;
     }
   }
@@ -332,25 +449,39 @@ function uploadFileChunk(docId, index, total, chunkBase64, fileName, mimeType) {
     success: true,
     completed: true,
     driveFileId: fileId,
-    fileName: fileName,
+    fileName: safeName,
     fileSize: fileSize
   };
 }
 
 /**
- * ดึงข้อมูลไฟล์ PDF จาก Google Drive ส่งกลับเป็น Base64
+ * ดึงข้อมูลไฟล์ PDF จาก Google Drive ส่งกลับเป็น Base64 (รองรับ fallback กรณีไฟล์ใหญ่เกินขีดจำกัด GAS response)
  */
 function getPdfBase64(fileId) {
   if (!fileId) throw new Error('ไม่ระบุ File ID');
   var file = DriveApp.getFileById(fileId);
+  var fileSize = file.getSize();
+  var fileName = file.getName();
+
+  // หากไฟล์เกิน 26 MB ส่งสัญญาณให้หน้าเว็บใช้ Google Drive Preview + Download โดยตรง
+  if (fileSize > 26 * 1024 * 1024) {
+    return {
+      success: true,
+      tooLargeForBase64: true,
+      fileName: fileName,
+      fileSize: fileSize,
+      mimeType: 'application/pdf'
+    };
+  }
+
   var blob = file.getBlob();
   var bytes = blob.getBytes();
   var b64 = Utilities.base64Encode(bytes);
   return {
     success: true,
     base64: b64,
-    fileName: file.getName(),
-    fileSize: file.getSize(),
+    fileName: fileName,
+    fileSize: fileSize,
     mimeType: blob.getContentType() || 'application/pdf'
   };
 }
@@ -371,9 +502,9 @@ function deleteDocAttachmentOnly(docId) {
           DriveApp.getFileById(driveFileId).setTrashed(true);
         } catch (e) {}
       }
-      sheet.getRange(i + 1, 4).setValue(''); // fileName
-      sheet.getRange(i + 1, 5).setValue(''); // driveFileId
-      sheet.getRange(i + 1, 7).setValue(0);  // fileSize
+      sheet.getRange(i + 1, 4).setValue('');
+      sheet.getRange(i + 1, 5).setValue('');
+      sheet.getRange(i + 1, 7).setValue(0);
       break;
     }
   }
@@ -387,7 +518,6 @@ function deleteDocument(docId) {
   if (!docId) throw new Error('Missing docId');
   var db = getDb_();
 
-  // 1. ลบจาก Documents
   var docSheet = db.docs;
   var docData = docSheet.getDataRange().getValues();
   for (var i = 1; i < docData.length; i++) {
@@ -403,7 +533,6 @@ function deleteDocument(docId) {
     }
   }
 
-  // 2. ลบคำตอบจาก Replies
   var replySheet = db.replies;
   var replyData = replySheet.getDataRange().getValues();
   for (var j = replyData.length - 1; j >= 1; j--) {
@@ -425,9 +554,9 @@ function toggleDocStatus(docId, newStatus) {
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(docId)) {
-      sheet.getRange(i + 1, 10).setValue(newStatus); // status (col 10)
+      sheet.getRange(i + 1, 10).setValue(newStatus);
       if (newStatus === 'closed') {
-        sheet.getRange(i + 1, 11).setValue(Date.now()); // closedAt (col 11)
+        sheet.getRange(i + 1, 11).setValue(Date.now());
       }
       break;
     }
@@ -444,18 +573,19 @@ function submitReply(reply) {
   }
   var db = getDb_();
   var replyId = reply.id || ('rep-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+  var choiceText = String(reply.choice || reply.response || '');
+  var createdTs = Number(reply.createdAt || reply.ts) || Date.now();
 
   db.replies.appendRow([
     replyId,
     String(reply.docId),
     String(reply.docTitle || ''),
     String(reply.name || ''),
-    String(reply.choice || ''),
+    choiceText,
     String(reply.comment || ''),
-    Number(reply.createdAt) || Date.now()
+    createdTs
   ]);
 
-  // เพิ่ม replyCount ใน Documents
   var docSheet = db.docs;
   var docData = docSheet.getDataRange().getValues();
   for (var i = 1; i < docData.length; i++) {
@@ -484,37 +614,5 @@ function incrementDocView(docId) {
       break;
     }
   }
-  return { success: true };
-}
-
-/**
- * นำเข้า Document (Batch import)
- */
-function importDocument(doc) {
-  return saveDocument(doc);
-}
-
-/**
- * นำเข้า Reply (Batch import)
- */
-function importReply(reply) {
-  if (!reply || !reply.id) return { success: false };
-  var db = getDb_();
-  var sheet = db.replies;
-  var data = sheet.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(reply.id)) {
-      return { success: true, existing: true };
-    }
-  }
-  sheet.appendRow([
-    String(reply.id),
-    String(reply.docId || ''),
-    String(reply.docTitle || ''),
-    String(reply.name || ''),
-    String(reply.choice || ''),
-    String(reply.comment || ''),
-    Number(reply.createdAt) || Date.now()
-  ]);
   return { success: true };
 }

@@ -239,10 +239,7 @@
             <h2 class="text-sm sm:text-base font-bold tracking-tight truncate">เพิ่มหนังสือเวียนทราบใหม่</h2>
           </div>
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
-            <span class="hidden lg:inline text-[11px] text-stone-300">เก็บไฟล์ใน Google Drive ถาวร</span>
-            <button type="button" onclick="app.openImportModal()" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-[#141a0b] bg-[#c9a227] hover:bg-[#dfb83d] rounded-lg transition-colors">
-              นำเข้าจากแอปเก่า
-            </button>
+            <span class="hidden sm:inline text-[11px] text-stone-300">เก็บไฟล์ใน Google Drive ถาวร</span>
             <button type="button" onclick="app.adminLogout()" class="min-h-[36px] px-3 py-1.5 text-xs font-semibold text-stone-200 bg-white/10 hover:bg-red-500/20 hover:text-red-200 border border-white/15 rounded-lg transition-colors">
               ออกจากระบบ
             </button>
@@ -274,11 +271,17 @@
                 <input id="add-deadline" type="datetime-local" class="w-full h-11 px-3 rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#3a4a21] text-xs sm:text-sm" />
               </div>
 
-              <div class="min-w-0">
-                <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1.5">แนบไฟล์จากเครื่อง (เฉพาะไฟล์ PDF)</label>
+              <div class="min-w-0 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-stone-800">ไฟล์ PDF แนบ (อัปโหลด หรือเลือกจาก Drive)</label>
+                  <button type="button" onclick="app.toggleDrivePicker('add')" class="px-2.5 py-1 text-[11px] font-semibold text-[#1e2713] bg-[#edf2e0] hover:bg-[#dfe8cb] border border-[#b4c298] rounded-lg transition-colors">
+                    📁 เลือกไฟล์จาก Google Drive
+                  </button>
+                </div>
                 <input id="add-file" type="file" accept=".pdf,application/pdf" onchange="app.handleAddFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
-                <div id="add-file-info" class="hidden mt-2 flex items-center justify-between gap-2 px-2.5 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
-                <div id="upload-progress-wrap" class="hidden mt-2.5 space-y-1">
+                <div id="add-file-info" class="hidden flex items-center justify-between gap-2 px-2.5 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
+                <div id="add-drive-picker-panel" class="hidden p-3 rounded-xl border border-[#b4c298] bg-[#f4f7ec] space-y-2 min-w-0"></div>
+                <div id="upload-progress-wrap" class="hidden mt-2 space-y-1">
                   <div class="flex justify-between text-[11px] font-semibold text-stone-700">
                     <span id="upload-progress-text">กำลังอัปโหลดไฟล์ขึ้น Google Drive...</span>
                     <span id="upload-progress-pct" class="font-mono-num">0%</span>
@@ -457,12 +460,18 @@
           <label class="block text-xs font-semibold text-stone-700 mb-1.5">กำหนดตอบกลับ</label>
           <input id="edit-deadline" type="datetime-local" class="w-full h-11 px-3 rounded-xl border border-stone-300 bg-white text-xs sm:text-sm" />
         </div>
-        <div class="min-w-0">
-          <label class="block text-xs font-semibold text-stone-700 mb-1.5">จัดการไฟล์แนบ (เฉพาะไฟล์ PDF)</label>
-          <div id="edit-current-file" class="mb-2 flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200 min-w-0 overflow-hidden"></div>
+        <div class="min-w-0 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="block text-xs font-semibold text-stone-700">จัดการไฟล์แนบ (เฉพาะไฟล์ PDF)</label>
+            <button type="button" onclick="app.toggleDrivePicker('edit')" class="px-2.5 py-1 text-[11px] font-semibold text-[#1e2713] bg-[#edf2e0] hover:bg-[#dfe8cb] border border-[#b4c298] rounded-lg transition-colors">
+              📁 เลือกไฟล์จาก Google Drive
+            </button>
+          </div>
+          <div id="edit-current-file" class="flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200 min-w-0 overflow-hidden"></div>
           <input id="edit-file" type="file" accept=".pdf,application/pdf" onchange="app.handleEditFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
-          <div id="edit-new-file-info" class="hidden mt-2 flex items-center justify-between gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
-          <div id="edit-upload-progress-wrap" class="hidden mt-2.5 space-y-1">
+          <div id="edit-new-file-info" class="hidden flex items-center justify-between gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
+          <div id="edit-drive-picker-panel" class="hidden p-3 rounded-xl border border-[#b4c298] bg-[#f4f7ec] space-y-2 min-w-0"></div>
+          <div id="edit-upload-progress-wrap" class="hidden mt-2 space-y-1">
             <div class="flex justify-between text-[11px] font-semibold text-stone-700">
               <span id="edit-upload-progress-text">กำลังอัปโหลดไฟล์ใหม่ขึ้น Google Drive...</span>
               <span id="edit-upload-progress-pct" class="font-mono-num">0%</span>
@@ -488,62 +497,6 @@
       <div class="flex items-center justify-end gap-2 pt-3 border-t border-stone-200">
         <button onclick="app.closeConfirmModal()" class="min-h-[42px] px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-200/80 hover:bg-stone-200 rounded-xl">ยกเลิก</button>
         <button id="confirm-ok-btn" class="min-h-[42px] px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md">ยืนยัน</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== IMPORT OLD APP MODAL ==================== -->
-  <div id="import-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-[#fafaf7] rounded-2xl shadow-2xl w-full max-w-xl max-h-[92dvh] overflow-y-auto border border-[#c9a227]/50 my-auto">
-      <div class="bg-[#1e2713] text-white px-5 py-4 flex items-center justify-between border-b border-[#c9a227]/40 sticky top-0 z-10">
-        <h3 class="font-bold text-sm sm:text-base">นำเข้าข้อมูลทั้งหมดจากแอปเก่า</h3>
-        <button onclick="app.closeImportModal()" class="min-w-[36px] min-h-[36px] flex items-center justify-center text-stone-300 hover:text-white rounded-lg hover:bg-white/10">✕</button>
-      </div>
-      <div class="p-4 sm:p-6 space-y-4 text-xs sm:text-sm">
-        <div class="p-3.5 rounded-xl bg-[#edf2e0] border border-[#cad5b2] space-y-2">
-          <label class="block text-xs font-bold text-[#1e2713]">ลิงก์ API แอปเก่า (/api/export)</label>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <input id="import-export-url" type="url" value="https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app/api/export" class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-[#b4c298] bg-white text-xs font-mono-num focus:outline-none focus:ring-2 focus:ring-[#3a4a21]" />
-            <button id="import-fetch-btn" type="button" onclick="app.fetchAndImportFromUrl()" class="min-h-[40px] px-4 py-2 bg-[#2e3b19] hover:bg-[#232d12] text-white text-xs font-bold rounded-xl shadow-sm shrink-0 disabled:opacity-50">
-              ดึงทันที
-            </button>
-          </div>
-          <p class="text-[11px] text-stone-600 leading-relaxed">หากแอปเก่าเปิดสิทธิ์สาธารณะ ระบบจะดึงเรื่อง ไฟล์ PDF และคำตอบทั้งหมดเข้าทันที (หากติดล็อกอิน AI Studio ให้ใช้วิธีด้านล่าง)</p>
-        </div>
-
-        <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 space-y-2 text-xs leading-relaxed">
-          <div class="font-bold">กรณีแอปเก่าติดล็อกอิน Google — วิธีดึงครบทั้งเรื่อง + ไฟล์ PDF + คำตอบ:</div>
-          <ol class="list-decimal pl-4 space-y-1">
-            <li>เปิดแท็บแอปเก่า <a href="https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app" target="_blank" rel="noopener noreferrer" class="underline font-semibold text-[#2e3b19]">เปิดแอปเก่า ↗</a> (ต้องล็อกอินบัญชี Google ที่ใช้งาน)</li>
-            <li>กด <kbd class="px-1.5 py-0.5 bg-white border border-amber-300 rounded text-[11px]">F12</kbd> เปิดแท็บ <strong>Console</strong> แล้ววางสคริปต์ที่คัดลอกจากปุ่มด้านล่าง จากนั้นกด <kbd class="px-1.5 py-0.5 bg-white border border-amber-300 rounded text-[11px]">Enter</kbd></li>
-            <li>ระบบจะดูดข้อมูลและไฟล์ PDF ทั้งหมดส่งเข้า Google Sheets + Drive ให้อัตโนมัติ (หรือดาวน์โหลดไฟล์ <code>dop-old-backup.json</code> ให้นำมาวางด้านล่าง)</li>
-          </ol>
-          <div class="flex flex-wrap gap-2 pt-1">
-            <button type="button" onclick="app.copyOldAppPullScript()" class="min-h-[38px] px-3 py-1.5 bg-[#2e3b19] hover:bg-[#232d12] text-white text-xs font-semibold rounded-lg shadow-sm">
-              คัดลอกสคริปต์ดึงข้อมูล + PDF ทั้งหมด
-            </button>
-            <a href="https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app/api/export" target="_blank" rel="noopener noreferrer" class="min-h-[38px] inline-flex items-center px-3 py-1.5 bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-xs font-semibold rounded-lg">
-              เปิด /api/export ↗
-            </a>
-          </div>
-        </div>
-
-        <div class="space-y-3 border-t border-stone-200 pt-3">
-          <div class="font-bold text-stone-800 text-xs sm:text-sm">หรือนำเข้าจากไฟล์ JSON / ข้อความที่คัดลอกจาก /api/export:</div>
-          <div>
-            <label class="block text-xs font-semibold text-stone-700 mb-1">เลือกไฟล์ .json (จากแอปเก่า หรือไฟล์ backup)</label>
-            <input id="import-json-file" type="file" accept=".json,application/json" onchange="app.handleImportFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-stone-700 mb-1">หรือวางข้อมูล JSON ที่นี่</label>
-            <textarea id="import-json-text" rows="4" placeholder='{"docs": [...], "replies": [...]}' class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-mono-num focus:outline-none focus:ring-2 focus:ring-[#3a4a21]"></textarea>
-          </div>
-          <div id="import-progress" class="hidden p-3 rounded-xl text-xs bg-stone-100 border border-stone-200 text-stone-700 leading-relaxed"></div>
-          <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
-            <button type="button" onclick="app.closeImportModal()" class="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-200/70 rounded-xl">ปิด</button>
-            <button id="import-submit-btn" type="button" onclick="app.runImportFromJson()" class="min-h-[42px] px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-[#2e3b19] hover:bg-[#232d12] rounded-xl shadow-md disabled:opacity-50">เริ่มนำเข้าข้อมูลทั้งหมด</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -584,7 +537,7 @@
       DEFAULT_DEADLINE_MS: 7 * 24 * 60 * 60 * 1000,
       STORAGE_MY_REPLIED_KEY: 'circular_sys_my_replied_v1',
       STORAGE_RESPONDER_KEY: 'circular_sys_responder_name',
-      STORAGE_STATE_CACHE_KEY: 'circular_sys_cached_state_v2',
+      STORAGE_STATE_CACHE_KEY: 'circular_sys_cached_state_v3',
       IDB_NAME: 'CircularPdfCacheV1',
       IDB_STORE: 'pdfs',
     };
@@ -626,8 +579,7 @@
           else if (action === 'submitReply') runner.submitReply(payload.reply);
           else if (action === 'incrementView') runner.incrementDocView(payload.docId);
           else if (action === 'getPdf') runner.getPdfBase64(payload.fileId);
-          else if (action === 'importDoc') runner.importDocument(payload.doc);
-          else if (action === 'importReply') runner.importReply(payload.reply);
+          else if (action === 'listDriveFiles') runner.listDriveFiles();
         });
       }
 
@@ -672,32 +624,52 @@
         }
       }
 
-      // 2. Dual-route optimization for 'getPdf' (Try POST first; fallback to GET)
+      // 2. Dual-route optimization for 'listDriveFiles'
+      if (action === 'listDriveFiles') {
+        try {
+          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=listDriveFiles&_t=${Date.now()}`, {
+            method: 'GET',
+            signal: makeTimeoutSignal(12000),
+          });
+          return await parseGasResponse(getRes);
+        } catch {
+          const postRes = await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'listDriveFiles' }),
+            signal: makeTimeoutSignal(15000),
+          });
+          return await parseGasResponse(postRes);
+        }
+      }
+
+      // 3. Dual-route optimization for 'getPdf' (Try POST first; fallback to GET)
       if (action === 'getPdf') {
         try {
           const postRes = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'getPdf', fileId: payload.fileId }),
-            signal: makeTimeoutSignal(18000),
+            signal: makeTimeoutSignal(30000),
           });
           return await parseGasResponse(postRes);
         } catch (postErr) {
           console.warn('POST getPdf fallback to GET:', postErr.message);
           const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getPdf&fileId=${encodeURIComponent(payload.fileId)}`, {
             method: 'GET',
-            signal: makeTimeoutSignal(20000),
+            signal: makeTimeoutSignal(35000),
           });
           return await parseGasResponse(getRes);
         }
       }
 
-      // 3. Standard POST with 30s timeout for mutations (saveDoc, uploadChunk, deleteDoc, etc.)
+      // 4. Standard POST (60s for uploadChunk, 35s for other mutations)
+      const timeoutMs = action === 'uploadChunk' ? 60000 : 35000;
       const response = await fetch(GAS_WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action, ...payload }),
-        signal: makeTimeoutSignal(35000),
+        signal: makeTimeoutSignal(timeoutMs),
       });
       return await parseGasResponse(response);
     }
@@ -800,45 +772,51 @@
     async function uploadFileInChunks(docId, file, onProgress) {
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
-      const CHUNK_SIZE = 5242880; // 5 MB ต่อรอบ (ขนาดใหญ่ขึ้น ส่งเร็วกว่าเดิม)
-      const totalChunks = Math.max(1, Math.ceil(bytes.length / CHUNK_SIZE));
-      let completedCount = 0;
 
-      if (onProgress) onProgress(0, totalChunks, 5);
+      // ใช้ขนาดหาร 3 ลงตัวเสมอ (6MB หรือ fallback 69,999B) เพื่อไม่ให้ Base64 มีเครื่องหมาย = คั่นกลาง
+      const sendWithChunkSize = async (chunkSize) => {
+        const totalChunks = Math.max(1, Math.ceil(bytes.length / chunkSize));
+        let lastRes = null;
 
-      const sendChunk = async (idx) => {
-        const slice = bytes.subarray(idx * CHUNK_SIZE, Math.min((idx + 1) * CHUNK_SIZE, bytes.length));
-        const chunkBase64 = uint8ToBase64Fast(slice);
-        
-        const approxPct = Math.min(95, Math.max(10, Math.round(((idx + 0.3) / totalChunks) * 100)));
-        if (onProgress) onProgress(idx, totalChunks, approxPct);
+        if (onProgress) onProgress(0, totalChunks, 5);
 
-        const res = await callBackend('uploadChunk', {
-          docId,
-          index: idx,
-          total: totalChunks,
-          chunkBase64,
-          fileName: file.name,
-          mimeType: file.type || 'application/pdf'
-        });
-        completedCount += 1;
-        const currentPct = Math.min(98, Math.round((completedCount / totalChunks) * 100));
-        if (onProgress) onProgress(completedCount, totalChunks, currentPct);
-        return res;
+        for (let idx = 0; idx < totalChunks; idx++) {
+          const slice = bytes.subarray(idx * chunkSize, Math.min((idx + 1) * chunkSize, bytes.length));
+          const chunkBase64 = uint8ToBase64Fast(slice);
+          const startPct = Math.min(95, Math.max(8, Math.round(((idx + 0.25) / totalChunks) * 100)));
+          if (onProgress) onProgress(idx, totalChunks, startPct);
+
+          lastRes = await callBackend('uploadChunk', {
+            docId,
+            index: idx,
+            total: totalChunks,
+            chunkBase64,
+            fileName: file.name,
+            mimeType: file.type || 'application/pdf',
+          });
+
+          const donePct = Math.min(98, Math.round(((idx + 1) / totalChunks) * 100));
+          if (onProgress) onProgress(idx + 1, totalChunks, donePct);
+        }
+
+        if (onProgress) onProgress(totalChunks, totalChunks, 100);
+        return { bytes, lastRes };
       };
 
-      if (totalChunks > 1) {
-        const preIndices = [];
-        for (let i = 0; i < totalChunks - 1; i++) preIndices.push(i);
-        const CONCURRENCY = 4; // ส่งพร้อมกันสูงสุด 4 ชิ้น (เร็วขึ้น 4 เท่า)
-        for (let start = 0; start < preIndices.length; start += CONCURRENCY) {
-          await Promise.all(preIndices.slice(start, start + CONCURRENCY).map(sendChunk));
-        }
-      }
+      const FAST_CHUNK_SIZE = 6291456; // 6 MB (6291456 % 3 === 0)
+      const CACHE_SAFE_CHUNK_SIZE = 69999; // ~93 KB Base64 (<100 KB CacheService limit, % 3 === 0)
 
-      const lastRes = await sendChunk(totalChunks - 1);
-      if (onProgress) onProgress(totalChunks, totalChunks, 100);
-      return { bytes, lastRes };
+      try {
+        return await sendWithChunkSize(FAST_CHUNK_SIZE);
+      } catch (err) {
+        const msg = String(err && err.message ? err.message : err);
+        const isSizeError = /過大|too large|exceed|argument|limit|max/i.test(msg);
+        if (isSizeError && bytes.length > CACHE_SAFE_CHUNK_SIZE) {
+          console.warn('Fast upload exceeded legacy GAS limit, switching to 69KB safe chunk mode:', msg);
+          return await sendWithChunkSize(CACHE_SAFE_CHUNK_SIZE);
+        }
+        throw err;
+      }
     }
 
     // ==================== FAST PDF CACHE & SHARED WORKER ====================
@@ -887,6 +865,10 @@
         replyDocId: null,
         editDocId: null,
         editRemoveFile: false,
+        addDriveFile: null,
+        editDriveFile: null,
+        driveFilesCache: null,
+        driveFolderUrl: '',
         reportDocId: null,
         reportFilter: 'all',
         hasLoadedOnce: false,
@@ -938,10 +920,6 @@
           if (e.key === 'Escape') {
             if (!document.getElementById('success-modal').classList.contains('hidden')) {
               this.closeSuccessModal();
-              return;
-            }
-            if (!document.getElementById('import-modal').classList.contains('hidden')) {
-              this.closeImportModal();
               return;
             }
             if (!document.getElementById('pdf-viewer-overlay').classList.contains('hidden')) {
@@ -1221,7 +1199,7 @@
             const isOpen = d.status === 'open' && !d.noReply && Number(d.deadline) > now;
             const replied = myReplied[d.id];
             const cd = this.getCountdownInfo(d, now);
-            const hasFile = Boolean(d.driveFileId || d.fileName);
+            const hasFile = Boolean(d.driveFileId);
             const isActive = this.state.activeDocId === d.id;
 
             let statusTag = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-stone-100 text-stone-600 rounded-md border border-stone-200"><span class="w-1.5 h-1.5 rounded-full bg-stone-400"></span>ปิดรับ</span>`;
@@ -1305,23 +1283,138 @@
         const f = input.files && input.files[0];
         const info = document.getElementById('add-file-info');
         if (!f) {
-          info.classList.add('hidden');
+          if (!this.state.addDriveFile) info.classList.add('hidden');
           return;
         }
         if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
           input.value = '';
-          info.classList.add('hidden');
+          if (!this.state.addDriveFile) info.classList.add('hidden');
           this.showAdminMsg('อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น', 'err');
           return;
         }
-        info.innerHTML = `<span class="truncate min-w-0 flex-1">พร้อมอัปโหลด: ${escHtml(f.name)} (${(f.size / 1048576).toFixed(2)} MB)</span>
+        this.state.addDriveFile = null;
+        info.innerHTML = `<span class="truncate min-w-0 flex-1">📎 พร้อมอัปโหลด: ${escHtml(f.name)} (${(f.size / 1048576).toFixed(2)} MB)</span>
           <button type="button" onclick="app.clearAddFile()" class="px-2 py-1 bg-red-100 text-red-700 rounded-lg font-semibold shrink-0">เอาออก</button>`;
         info.classList.remove('hidden');
       },
 
       clearAddFile() {
         document.getElementById('add-file').value = '';
+        this.state.addDriveFile = null;
         document.getElementById('add-file-info').classList.add('hidden');
+      },
+
+      async toggleDrivePicker(mode) {
+        const panel = document.getElementById(`${mode}-drive-picker-panel`);
+        if (!panel) return;
+        if (!panel.classList.contains('hidden')) {
+          panel.classList.add('hidden');
+          return;
+        }
+        panel.classList.remove('hidden');
+        await this.loadDriveFilesList(mode, !this.state.driveFilesCache);
+      },
+
+      async loadDriveFilesList(mode, forceRefresh = false) {
+        const panel = document.getElementById(`${mode}-drive-picker-panel`);
+        if (!panel) return;
+
+        if (forceRefresh || !this.state.driveFilesCache) {
+          panel.innerHTML = `
+            <div class="flex items-center justify-center gap-2 py-4 text-xs text-stone-600">
+              <span class="w-4 h-4 border-2 border-[#3a4a21] border-t-transparent rounded-full animate-spin"></span>
+              <span>กำลังดึงรายการไฟล์ PDF จาก Google Drive...</span>
+            </div>`;
+          try {
+            const res = await callBackend('listDriveFiles');
+            this.state.driveFilesCache = res.files || [];
+            this.state.driveFolderUrl = res.folderUrl || '';
+          } catch (err) {
+            panel.innerHTML = `
+              <div class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-2">
+                <div class="font-bold">ไม่สามารถดึงรายการไฟล์จาก Google Drive ได้</div>
+                <div class="text-[11px] text-red-700">${escHtml(err.message)}</div>
+                <div class="text-[11px] text-stone-600">หากเพิ่งอัปเดตระบบ กรุณานำโค้ด <strong>Code.gs</strong> ล่าสุดไปวางและ Deploy > New version ใน Google Apps Script ก่อน หรือเลือกอัปโหลดไฟล์จากเครื่องด้านบนได้ทันที</div>
+                <button type="button" onclick="app.loadDriveFilesList('${mode}', true)" class="px-3 py-1 bg-[#2e3b19] text-white rounded-lg text-[11px] font-semibold">ลองดึงใหม่</button>
+              </div>`;
+            return;
+          }
+        }
+
+        const files = this.state.driveFilesCache || [];
+        const folderBtn = this.state.driveFolderUrl
+          ? `<a href="${escHtml(this.state.driveFolderUrl)}" target="_blank" rel="noopener noreferrer" class="px-2 py-1 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg text-[11px] font-semibold text-stone-700">เปิดโฟลเดอร์ Drive ↗</a>`
+          : '';
+
+        if (files.length === 0) {
+          panel.innerHTML = `
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-[#cad5b2]">
+              <span class="text-xs font-bold text-[#1e2713]">ไฟล์ PDF ใน Google Drive</span>
+              <div class="flex items-center gap-1.5">
+                ${folderBtn}
+                <button type="button" onclick="app.loadDriveFilesList('${mode}', true)" class="px-2 py-1 bg-[#2e3b19] text-white rounded-lg text-[11px] font-semibold">🔄 รีเฟรช</button>
+              </div>
+            </div>
+            <div class="py-4 text-center text-xs text-stone-500">ไม่พบไฟล์ PDF ใน Google Drive — สามารถอัปโหลดไฟล์เข้าโฟลเดอร์ <strong>ระบบหนังสือเวียนทราบ_กพ.ทบ.</strong> แล้วกดรีเฟรช หรือเลือกไฟล์จากเครื่องได้</div>`;
+          return;
+        }
+
+        panel.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#cad5b2]">
+            <span class="text-xs font-bold text-[#1e2713]">เลือกไฟล์ PDF ปัจจุบันจาก Drive (${files.length} ไฟล์)</span>
+            <div class="flex items-center gap-1.5">
+              ${folderBtn}
+              <button type="button" onclick="app.loadDriveFilesList('${mode}', true)" class="px-2 py-1 bg-[#2e3b19] text-white rounded-lg text-[11px] font-semibold">🔄 รีเฟรช</button>
+            </div>
+          </div>
+          <div class="max-h-56 overflow-y-auto divide-y divide-[#dce4cb] bg-white rounded-xl border border-[#cfd6bf]">
+            ${files
+              .map(
+                (f) => `
+              <div class="p-2.5 flex items-center justify-between gap-2 hover:bg-[#f7faef] min-w-0">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-semibold text-stone-900 truncate">${escHtml(f.name)}</div>
+                  <div class="text-[11px] text-stone-500 flex flex-wrap items-center gap-1.5 mt-0.5 tabular-nums">
+                    <span class="px-1.5 py-0.5 rounded ${f.inSystemFolder ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-stone-100 text-stone-600'} text-[10px] font-semibold">${f.inSystemFolder ? 'ในโฟลเดอร์ระบบ' : 'Google Drive'}</span>
+                    <span>${(Number(f.size || 0) / 1048576).toFixed(2)} MB</span>
+                    ${f.updatedAt ? `<span>· ${fmtDate(f.updatedAt)}</span>` : ''}
+                  </div>
+                </div>
+                <button type="button" onclick="app.selectDriveFile('${mode}', '${escHtml(f.id)}')" class="px-2.5 py-1.5 bg-[#2e3b19] hover:bg-[#232d12] text-white text-[11px] font-semibold rounded-lg shrink-0">เลือกไฟล์นี้</button>
+              </div>`
+              )
+              .join('')}
+          </div>`;
+      },
+
+      selectDriveFile(mode, fileId) {
+        const files = this.state.driveFilesCache || [];
+        const f = files.find((x) => x.id === fileId);
+        if (!f) return;
+
+        const panel = document.getElementById(`${mode}-drive-picker-panel`);
+        if (panel) panel.classList.add('hidden');
+
+        if (mode === 'add') {
+          document.getElementById('add-file').value = '';
+          this.state.addDriveFile = f;
+          const info = document.getElementById('add-file-info');
+          info.innerHTML = `<span class="truncate min-w-0 flex-1">📁 จาก Drive: <strong>${escHtml(f.name)}</strong> (${(Number(f.size || 0) / 1048576).toFixed(2)} MB)</span>
+            <button type="button" onclick="app.clearAddFile()" class="px-2 py-1 bg-red-100 text-red-700 rounded-lg font-semibold shrink-0">เอาออก</button>`;
+          info.classList.remove('hidden');
+        } else {
+          document.getElementById('edit-file').value = '';
+          this.state.editRemoveFile = false;
+          this.state.editDriveFile = f;
+          const newBox = document.getElementById('edit-new-file-info');
+          if (newBox) {
+            newBox.innerHTML = `<span class="truncate">📁 จาก Drive ที่เลือก: <strong>${escHtml(f.name)}</strong> (${(Number(f.size || 0) / 1048576).toFixed(2)} MB)</span>
+              <button type="button" onclick="app.cancelEditNewFile()" class="px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-md shrink-0">✕ ยกเลิกไฟล์นี้</button>`;
+            newBox.classList.remove('hidden');
+          }
+          const doc = this.state.docs.find((d) => d.id === this.state.editDocId);
+          if (doc) this.renderEditCurrentFileBox(doc);
+        }
       },
 
       showAdminMsg(text, type = 'ok') {
@@ -1334,6 +1427,9 @@
             ? 'mb-4 p-3 rounded-xl text-xs bg-amber-50 text-amber-800 border border-amber-200'
             : 'mb-4 p-3 rounded-xl text-xs bg-red-50 text-red-700 border border-red-200';
         box.classList.remove('hidden');
+        if (type === 'err') {
+          box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       },
 
       async handleAddDocument(e) {
@@ -1344,6 +1440,7 @@
         const deadlineStr = document.getElementById('add-deadline').value;
         const fileInput = document.getElementById('add-file');
         const file = fileInput.files && fileInput.files[0];
+        const pickedDrive = this.state.addDriveFile;
 
         if (!title) {
           this.showAdminMsg('กรุณาระบุชื่อเรื่องหนังสือเวียนทราบ', 'err');
@@ -1351,6 +1448,7 @@
         }
 
         const btn = document.getElementById('add-submit-btn');
+        const progWrap = document.getElementById('upload-progress-wrap');
         btn.disabled = true;
         this.showAdminMsg('กำลังบันทึกข้อมูลหนังสือเวียนทราบ...', 'info');
 
@@ -1365,10 +1463,10 @@
             id: docId,
             title,
             description: desc,
-            fileName: file ? file.name : '',
-            driveFileId: '',
+            fileName: pickedDrive ? pickedDrive.name : (file ? file.name : ''),
+            driveFileId: pickedDrive ? pickedDrive.id : '',
             mimeType: 'application/pdf',
-            fileSize: file ? file.size : 0,
+            fileSize: pickedDrive ? Number(pickedDrive.size || 0) : (file ? file.size : 0),
             createdAt: Date.now(),
             deadline: noReply ? 0 : (deadlineStr ? new Date(deadlineStr).getTime() : Date.now() + CONFIG.DEFAULT_DEADLINE_MS),
             status: 'open',
@@ -1379,8 +1477,7 @@
           await callBackend('saveDoc', { doc: newDoc });
           docSaved = true;
 
-          if (file) {
-            const progWrap = document.getElementById('upload-progress-wrap');
+          if (!pickedDrive && file) {
             const progressBar = document.getElementById('upload-progress-bar');
             const progressPct = document.getElementById('upload-progress-pct');
             const progressText = document.getElementById('upload-progress-text');
@@ -1396,25 +1493,24 @@
             });
             pdfMemCache.set(docId, bytes);
             await pdfIdb.save(docId, bytes).catch(() => {});
-            if (progWrap) progWrap.classList.add('hidden');
-            if (lastRes && lastRes.completed && !lastRes.driveFileId) {
-              throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive (กรุณาอัปเดต Code.gs)');
+            if (!lastRes || !lastRes.driveFileId) {
+              throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive');
             }
           }
 
           this.state.activeDocId = docId;
           document.getElementById('add-doc-form').reset();
           this.clearAddFile();
-          const progWrap = document.getElementById('upload-progress-wrap');
-          if (progWrap) progWrap.classList.add('hidden');
+          const addPanel = document.getElementById('add-drive-picker-panel');
+          if (addPanel) addPanel.classList.add('hidden');
           this.toggleAddDeadlineField();
           document.getElementById('add-deadline').value = toDatetimeLocalValue(Date.now() + CONFIG.DEFAULT_DEADLINE_MS);
 
           document.getElementById('admin-status-msg').classList.add('hidden');
           this.showSuccessModal(
             'บันทึกสำเร็จ',
-            file
-              ? `เผยแพร่เรื่อง "${title}" และอัปโหลดไฟล์แนบขึ้น Google Drive เรียบร้อยแล้ว`
+            (pickedDrive || file)
+              ? `เผยแพร่เรื่อง "${title}" และเชื่อมต่อไฟล์ PDF ใน Google Drive เรียบร้อยแล้ว`
               : `เผยแพร่หนังสือเวียนทราบเรื่อง "${title}" เรียบร้อยแล้ว`
           );
           await this.loadData();
@@ -1425,6 +1521,7 @@
           this.showAdminMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึก', 'err');
           this.showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
         } finally {
+          if (progWrap) progWrap.classList.add('hidden');
           btn.innerHTML = '<span>เผยแพร่หนังสือเวียนทราบ</span>';
           btn.disabled = false;
         }
@@ -1622,6 +1719,7 @@
         if (!doc) return;
         this.state.editDocId = docId;
         this.state.editRemoveFile = false;
+        this.state.editDriveFile = null;
         document.getElementById('edit-error').classList.add('hidden');
         document.getElementById('edit-title').value = doc.title || '';
         document.getElementById('edit-desc').value = doc.description || '';
@@ -1633,6 +1731,8 @@
         if (fileInput) fileInput.value = '';
         const newBox = document.getElementById('edit-new-file-info');
         if (newBox) newBox.classList.add('hidden');
+        const editPanel = document.getElementById('edit-drive-picker-panel');
+        if (editPanel) editPanel.classList.add('hidden');
         const progWrap = document.getElementById('edit-upload-progress-wrap');
         if (progWrap) {
           progWrap.classList.add('hidden');
@@ -1654,13 +1754,18 @@
             ? '<span class="text-red-600">ลบไฟล์แนบแล้ว (กดบันทึกเพื่อยืนยัน)</span>'
             : hasFile
             ? escHtml(doc.fileName || 'มีไฟล์แนบใน Google Drive') + sizeMb + (!doc.driveFileId ? ' <span class="text-amber-700 font-normal">(ยังไม่พบใน Drive)</span>' : '')
-            : '<span class="text-stone-400 font-normal">ยังไม่มีไฟล์แนบ (สามารถเลือกแนบไฟล์ PDF ใหม่ด้านล่างได้)</span>'
+            : '<span class="text-stone-400 font-normal">ยังไม่มีไฟล์แนบ (เลือกไฟล์ PDF ด้านล่าง หรือเลือกจาก Drive)</span>'
         }</strong></span>
         ${hasFile ? `<button type="button" onclick="app.markEditRemoveFile()" class="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg font-semibold shrink-0">🗑 ลบไฟล์แนบ</button>` : ''}`;
       },
 
       markEditRemoveFile() {
         this.state.editRemoveFile = true;
+        this.state.editDriveFile = null;
+        const input = document.getElementById('edit-file');
+        if (input) input.value = '';
+        const newBox = document.getElementById('edit-new-file-info');
+        if (newBox) newBox.classList.add('hidden');
         const doc = this.state.docs.find((d) => d.id === this.state.editDocId);
         if (doc) this.renderEditCurrentFileBox(doc);
       },
@@ -1678,7 +1783,7 @@
 
         if (f && f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
           input.value = '';
-          if (newBox) newBox.classList.add('hidden');
+          if (newBox && !this.state.editDriveFile) newBox.classList.add('hidden');
           err.textContent = 'อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น';
           err.classList.remove('hidden');
           return;
@@ -1686,6 +1791,7 @@
 
         if (f) {
           this.state.editRemoveFile = false;
+          this.state.editDriveFile = null;
           const mb = (f.size / (1024 * 1024)).toFixed(2);
           if (newBox) {
             newBox.innerHTML = `
@@ -1694,7 +1800,7 @@
             `;
             newBox.classList.remove('hidden');
           }
-        } else {
+        } else if (!this.state.editDriveFile) {
           if (newBox) newBox.classList.add('hidden');
         }
         const doc = this.state.docs.find((d) => d.id === this.state.editDocId);
@@ -1704,6 +1810,7 @@
       cancelEditNewFile() {
         const input = document.getElementById('edit-file');
         if (input) input.value = '';
+        this.state.editDriveFile = null;
         const newBox = document.getElementById('edit-new-file-info');
         if (newBox) newBox.classList.add('hidden');
         const doc = this.state.docs.find((d) => d.id === this.state.editDocId);
@@ -1713,6 +1820,7 @@
       closeEditModal() {
         document.getElementById('edit-modal').classList.add('hidden');
         this.state.editDocId = null;
+        this.state.editDriveFile = null;
       },
 
       async handleEditSubmit(e) {
@@ -1725,10 +1833,12 @@
         if (!title) {
           errEl.textContent = 'กรุณาระบุชื่อเรื่อง';
           errEl.classList.remove('hidden');
+          errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           return;
         }
 
         const btn = document.getElementById('edit-submit-btn');
+        const progWrap = document.getElementById('edit-upload-progress-wrap');
         btn.disabled = true;
         btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span> กำลังบันทึก...`;
         errEl.classList.add('hidden');
@@ -1739,6 +1849,7 @@
           const deadlineStr = document.getElementById('edit-deadline').value;
           const fileInput = document.getElementById('edit-file');
           const newFile = fileInput.files && fileInput.files[0];
+          const pickedDrive = this.state.editDriveFile;
 
           if (this.state.editRemoveFile && (doc.driveFileId || doc.fileName)) {
             await callBackend('deleteAttachment', { docId: doc.id });
@@ -1754,15 +1865,33 @@
             deadline: noReply ? 0 : (deadlineStr ? new Date(deadlineStr).getTime() : doc.deadline),
             status,
             closedAt: !noReply && status === 'closed' ? (doc.closedAt || Date.now()) : 0,
-            fileName: this.state.editRemoveFile ? '' : (newFile ? newFile.name : (doc.fileName || '')),
-            driveFileId: this.state.editRemoveFile ? '' : (doc.driveFileId || ''),
+            fileName: this.state.editRemoveFile
+              ? ''
+              : pickedDrive
+              ? pickedDrive.name
+              : newFile
+              ? newFile.name
+              : (doc.fileName || ''),
+            driveFileId: this.state.editRemoveFile
+              ? ''
+              : pickedDrive
+              ? pickedDrive.id
+              : (doc.driveFileId || ''),
             mimeType: 'application/pdf',
-            fileSize: this.state.editRemoveFile ? 0 : (newFile ? newFile.size : (doc.fileSize || 0)),
+            fileSize: this.state.editRemoveFile
+              ? 0
+              : pickedDrive
+              ? Number(pickedDrive.size || 0)
+              : newFile
+              ? newFile.size
+              : (doc.fileSize || 0),
           };
 
-          if (newFile) {
+          if (pickedDrive) {
             invalidatePdfCache(doc.id);
-            const progWrap = document.getElementById('edit-upload-progress-wrap');
+            await pdfIdb.remove(doc.id).catch(() => {});
+          } else if (newFile) {
+            invalidatePdfCache(doc.id);
             const progressBar = document.getElementById('edit-upload-progress-bar');
             const progressPct = document.getElementById('edit-upload-progress-pct');
             const progressText = document.getElementById('edit-upload-progress-text');
@@ -1778,19 +1907,17 @@
             });
             pdfMemCache.set(doc.id, bytes);
             await pdfIdb.save(doc.id, bytes).catch(() => {});
-            if (progWrap) progWrap.classList.add('hidden');
-            if (lastRes && lastRes.completed && lastRes.driveFileId) {
+            if (lastRes && lastRes.driveFileId) {
               updatedDoc.driveFileId = lastRes.driveFileId;
               updatedDoc.fileName = newFile.name;
               updatedDoc.fileSize = newFile.size;
-            } else if (lastRes && lastRes.completed && !lastRes.driveFileId) {
+            } else {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive');
             }
           }
 
           await callBackend('saveDoc', { doc: updatedDoc });
 
-          // อัปเดตในหน่วยความจำทันที
           const localIdx = this.state.docs.findIndex((d) => d.id === doc.id);
           if (localIdx >= 0) {
             this.state.docs[localIdx] = updatedDoc;
@@ -1798,14 +1925,14 @@
           this.renderAll();
 
           this.closeEditModal();
-          const progWrap = document.getElementById('edit-upload-progress-wrap');
-          if (progWrap) progWrap.classList.add('hidden');
           this.showSuccessModal('บันทึกสำเร็จ', `อัปเดตข้อมูลเรื่อง "${title}" เรียบร้อยแล้ว`);
           await this.loadData();
         } catch (err) {
           errEl.textContent = 'บันทึกการแก้ไขไม่สำเร็จ: ' + err.message;
           errEl.classList.remove('hidden');
+          errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } finally {
+          if (progWrap) progWrap.classList.add('hidden');
           btn.innerHTML = '<span>บันทึกการแก้ไข</span>';
           btn.disabled = false;
         }
@@ -1840,6 +1967,9 @@
 
         const fetchPromise = (async () => {
           const res = await callBackend('getPdf', { fileId: doc.driveFileId });
+          if (res && res.tooLargeForBase64) {
+            return { tooLargeForBase64: true };
+          }
           const b64 = typeof res === 'string' ? res : (res && res.success && res.base64 ? res.base64 : null);
           if (b64) {
             const decoded = await base64ToUint8Fast(b64);
@@ -1861,10 +1991,11 @@
       async prefetchPdf(docId) {
         const doc = this.state.docs.find((d) => d.id === docId);
         if (!doc || !doc.driveFileId) return;
+        if (doc.fileSize && Number(doc.fileSize) > 20 * 1024 * 1024) return;
         if (pdfProxyCache.has(doc.id)) return;
         try {
           const bytes = await this.getPdfBytes(doc);
-          if (bytes && bytes.length > 0 && window.pdfjsLib && !pdfProxyCache.has(doc.id)) {
+          if (bytes instanceof Uint8Array && bytes.length > 0 && window.pdfjsLib && !pdfProxyCache.has(doc.id)) {
             const task = pdfjsLib.getDocument({
               data: bytes.slice(0),
               worker: getSharedPdfWorker(),
@@ -1883,7 +2014,6 @@
           .slice(0, 6);
         if (candidates.length === 0) return;
 
-        // ดึงข้อมูลล่วงหน้าทีละ 2 ไฟล์ เพื่อไม่รบกวนแบนด์วิดท์หลัก
         const CONCURRENCY = 2;
         for (let i = 0; i < candidates.length; i += CONCURRENCY) {
           await Promise.allSettled(candidates.slice(i, i + CONCURRENCY).map((d) => this.prefetchPdf(d.id)));
@@ -1892,7 +2022,7 @@
 
       async openPdfViewer(docId) {
         const doc = this.state.docs.find((d) => d.id === docId);
-        if (!doc || (!doc.driveFileId && !doc.fileName)) return;
+        if (!doc || !doc.driveFileId) return;
         this.state.savedScrollY = window.scrollY;
         this.state.activeDocId = docId;
         this.state.viewingPdfDoc = doc;
@@ -1935,12 +2065,28 @@
           if (doc.mimeType && !doc.mimeType.includes('pdf')) {
             throw new Error('ไม่ใช่ไฟล์ PDF');
           }
-          const bytes = await this.getPdfBytes(doc);
-          if (!bytes || bytes.length === 0) {
+          const result = await this.getPdfBytes(doc);
+          if (result && result.tooLargeForBase64) {
+            container.innerHTML = `
+              <div class="w-full max-w-4xl flex-1 flex flex-col gap-2 min-h-[75dvh]">
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-[#141a0d] px-3 py-2 rounded-xl border border-[#c9a227]/30 text-xs text-stone-200">
+                  <span>ไฟล์ขนาดใหญ่ (${(Number(doc.fileSize || 0) / 1048576).toFixed(1)} MB) — แสดงผลผ่าน Google Drive Viewer</span>
+                  <a href="https://drive.google.com/uc?export=download&id=${encodeURIComponent(doc.driveFileId)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1 bg-[#c9a227] text-[#141a0b] font-bold rounded-lg">⬇ ดาวน์โหลดไฟล์เต็ม</a>
+                </div>
+                <iframe src="https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/preview" class="w-full flex-1 min-h-[70dvh] rounded-xl border border-white/10 bg-white" allow="autoplay"></iframe>
+              </div>`;
+            return;
+          }
+          if (!result || !(result instanceof Uint8Array) || result.length === 0) {
             throw new Error('ไม่พบข้อมูลไฟล์ PDF หรือไฟล์ยังไม่ถูกบันทึกสมบูรณ์');
           }
-          this.state.viewingPdfBytes = bytes;
-          await this.renderPdfBytes(bytes, docId);
+          // ตรวจสอบว่าไม่ใช่ไฟล์ HTML ที่ผิดพลาด
+          const headStr = String.fromCharCode(...result.subarray(0, Math.min(16, result.length))).trim().toLowerCase();
+          if (headStr.startsWith('<!doc') || headStr.startsWith('<html')) {
+            throw new Error('ไฟล์ใน Drive ไม่ใช่ไฟล์ PDF ที่สมบูรณ์ กรุณาอัปโหลดไฟล์ใหม่ในหน้าผู้ดูแลระบบ');
+          }
+          this.state.viewingPdfBytes = result;
+          await this.renderPdfBytes(result, docId);
         } catch (err) {
             container.innerHTML = `
               <div class="my-auto text-center text-stone-300 p-6 bg-[#1b1d1f] rounded-2xl border border-white/10 max-w-md space-y-3">
@@ -2169,14 +2315,18 @@
 
         try {
           localStorage.setItem(CONFIG.STORAGE_RESPONDER_KEY, name);
+          const nowTs = Date.now();
+          const respText = choices.join(', ');
           const reply = {
-            id: 'rep-' + Date.now(),
+            id: 'rep-' + nowTs,
             docId: doc.id,
             docTitle: doc.title,
             name,
-            response: choices.join(', '),
+            choice: respText,
+            response: respText,
             comment,
-            ts: Date.now(),
+            createdAt: nowTs,
+            ts: nowTs,
           };
 
           await callBackend('submitReply', { reply });
@@ -2220,8 +2370,10 @@
 
       renderReportBody() {
         const docReplies = this.state.replies.filter((r) => r.docId === this.state.reportDocId);
-        const cntAck = docReplies.filter((r) => (r.response || '').includes('รับทราบ')).length;
-        const cntExp = docReplies.filter((r) => (r.response || '').includes('แจ้งความประสงค์')).length;
+        const getResp = (r) => r.response || r.choice || '';
+        const getTs = (r) => r.ts || r.createdAt || 0;
+        const cntAck = docReplies.filter((r) => getResp(r).includes('รับทราบ')).length;
+        const cntExp = docReplies.filter((r) => getResp(r).includes('แจ้งความประสงค์')).length;
         const cntCom = docReplies.filter((r) => (r.comment || '').trim().length > 0).length;
 
         document.getElementById('report-stats').innerHTML = `
@@ -2241,8 +2393,8 @@
           .join('');
 
         const filtered = docReplies.filter((r) => {
-          if (this.state.reportFilter === 'ack') return (r.response || '').includes('รับทราบ');
-          if (this.state.reportFilter === 'exp') return (r.response || '').includes('แจ้งความประสงค์');
+          if (this.state.reportFilter === 'ack') return getResp(r).includes('รับทราบ');
+          if (this.state.reportFilter === 'exp') return getResp(r).includes('แจ้งความประสงค์');
           if (this.state.reportFilter === 'com') return (r.comment || '').trim().length > 0;
           return true;
         });
@@ -2268,9 +2420,9 @@
                 .map(
                   (r, idx) => `<tr class="hover:bg-stone-50">
                     <td class="py-2.5 px-3 text-stone-400 font-mono-num">${idx + 1}</td>
-                    <td class="py-2.5 px-3 whitespace-nowrap text-stone-600 tabular-nums">${escHtml(r.timeFormatted || fmtDateTime(r.ts))}</td>
+                    <td class="py-2.5 px-3 whitespace-nowrap text-stone-600 tabular-nums">${escHtml(r.timeFormatted || fmtDateTime(getTs(r)))}</td>
                     <td class="py-2.5 px-3 font-semibold text-stone-900">${escHtml(r.name)}</td>
-                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-md text-xs font-medium bg-[#edf2e0] text-[#283416]">${escHtml(r.response)}</span></td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-md text-xs font-medium bg-[#edf2e0] text-[#283416]">${escHtml(getResp(r))}</span></td>
                     <td class="py-2.5 px-3 text-stone-600">${escHtml(r.comment || '-')}</td>
                   </tr>`
                 )
@@ -2285,9 +2437,9 @@
         const headers = ['ลำดับ', 'เวลาที่ตอบ', 'ยศ-ชื่อ-สกุล', 'การตอบกลับ', 'ความเห็น/รายละเอียด'];
         const rows = docReplies.map((r, i) => [
           i + 1,
-          `"${(r.timeFormatted || fmtDateTime(r.ts)).replace(/"/g, '""')}"`,
+          `"${(r.timeFormatted || fmtDateTime(r.ts || r.createdAt)).replace(/"/g, '""')}"`,
           `"${(r.name || '').replace(/"/g, '""')}"`,
-          `"${(r.response || '').replace(/"/g, '""')}"`,
+          `"${(r.response || r.choice || '').replace(/"/g, '""')}"`,
           `"${(r.comment || '').replace(/"/g, '""')}"`,
         ]);
         const csv = '\uFEFF' + [headers.join(','), ...rows.map((x) => x.join(','))].join('\r\n');
@@ -2300,369 +2452,6 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
-      },
-
-      // -------- IMPORT FROM OLD APP --------
-      openImportModal() {
-        document.getElementById('import-json-file').value = '';
-        document.getElementById('import-json-text').value = '';
-        const prog = document.getElementById('import-progress');
-        prog.classList.add('hidden');
-        prog.textContent = '';
-        document.getElementById('import-modal').classList.remove('hidden');
-      },
-
-      closeImportModal() {
-        document.getElementById('import-modal').classList.add('hidden');
-      },
-
-      async handleImportFileChange(input) {
-        const f = input.files && input.files[0];
-        if (!f) return;
-        try {
-          const text = await f.text();
-          document.getElementById('import-json-text').value = text;
-          this.showToast(`โหลดไฟล์ ${f.name} พร้อมนำเข้าแล้ว`, 'info');
-        } catch (err) {
-          this.showToast('อ่านไฟล์ไม่สำเร็จ: ' + err.message, 'error');
-        }
-      },
-
-      copyOldAppPullScript() {
-        const script = `(async () => {
-  const GAS = '${GAS_WEB_APP_URL}';
-  console.log('กำลังดึงข้อมูลจากแอปเก่า /api/export ...');
-  const res = await fetch('/api/export', { credentials: 'include' });
-  const data = await res.json();
-  const docs = data.docs || [];
-  const replies = data.replies || [];
-  console.log('พบหนังสือ ' + docs.length + ' เรื่อง, คำตอบ ' + replies.length + ' รายการ');
-
-  const toB64 = (buf) => {
-    const b = new Uint8Array(buf);
-    let s = '';
-    for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, Math.min(i + 0x8000, b.length)));
-    return btoa(s);
-  };
-
-  const st = await (await fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'getState' }) })).json();
-  const exDocMap = new Map((st.docs || []).map(x => [String(x.id), x]));
-  const exReps = new Set((st.replies || []).map(x => String(x.id)));
-
-  for (let i = 0; i < docs.length; i++) {
-    const d = docs[i];
-    const ex = exDocMap.get(String(d.id));
-    if (ex && ex.driveFileId) continue;
-    const candidates = [d.pdfDownloadUrl, d.pdfStreamUrl].filter(Boolean);
-    for (const rawUrl of candidates) {
-      if (d.pdfBase64) break;
-      try {
-        console.log('กำลังโหลด PDF (' + (i + 1) + '/' + docs.length + '): ' + d.title);
-        const u = new URL(rawUrl, location.origin);
-        const r = await fetch(u.pathname + u.search, { credentials: 'include' });
-        const ct = r.headers.get('content-type') || '';
-        if (r.ok && !ct.includes('text/html') && !ct.includes('application/json')) {
-          const buf = await r.arrayBuffer();
-          if (buf.byteLength > 100) d.pdfBase64 = toB64(buf);
-        }
-      } catch (e) { console.warn('โหลด PDF ไม่ได้:', d.title, e); }
-    }
-  }
-
-  const dl = () => {
-    const blob = new Blob([JSON.stringify({ docs, replies })], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'dop-old-backup.json';
-    a.click();
-    console.log('ดาวน์โหลดไฟล์ dop-old-backup.json สำเร็จ ให้นำไปอัปโหลดในหน้าผู้ดูแลระบบของแอปใหม่');
-  };
-
-  try {
-    const postGas = async (action, payload) => {
-      const resp = await fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, ...payload }) });
-      return resp.json();
-    };
-    for (let i = 0; i < docs.length; i++) {
-      const d = docs[i];
-      const ex = exDocMap.get(String(d.id));
-      if (!ex) {
-        let r = await postGas('importDoc', { doc: d }).catch(() => null);
-        if (!r || !r.success) await postGas('saveDoc', { doc: d });
-      }
-      if (d.pdfBase64 && (!ex || !ex.driveFileId)) {
-        const bin = atob(d.pdfBase64);
-        const bytes = new Uint8Array(bin.length);
-        for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
-        const CHUNK = 3145728;
-        const total = Math.max(1, Math.ceil(bytes.length / CHUNK));
-        for (let c = 0; c < total; c++) {
-          const sl = bytes.subarray(c * CHUNK, Math.min((c + 1) * CHUNK, bytes.length));
-          await postGas('uploadChunk', { docId: d.id, index: c, total, chunkBase64: toB64(sl.buffer), fileName: d.fileName || (d.title + '.pdf'), mimeType: 'application/pdf' });
-        }
-      }
-      console.log('นำเข้าเรื่องแล้ว ' + (i + 1) + '/' + docs.length);
-    }
-    for (const r of replies) {
-      if (!exReps.has(String(r.id))) {
-        let resR = await postGas('importReply', { reply: r }).catch(() => null);
-        if (!resR || !resR.success) await postGas('submitReply', { reply: r });
-      }
-    }
-    console.log('เสร็จสมบูรณ์! รีเฟรชหน้าแอปใหม่เพื่อดูข้อมูลทั้งหมด');
-  } catch (e) {
-    console.warn('ส่งตรงไม่สำเร็จ กำลังดาวน์โหลดไฟล์สำรองให้แทน...', e);
-    dl();
-  }
-})();`;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(script).then(
-            () => this.showToast('คัดลอกสคริปต์เรียบร้อย นำไปวางใน Console (F12) ของแอปเก่าได้เลย', 'success'),
-            () => {
-              document.getElementById('import-json-text').value = script;
-              this.showToast('ไม่สามารถเข้าถึงคลิปบอร์ดอัตโนมัติ แสดงสคริปต์ในช่องข้อความแล้ว', 'info');
-            }
-          );
-        } else {
-          document.getElementById('import-json-text').value = script;
-          this.showToast('คัดลอกสคริปต์จากช่องข้อความด้านล่าง', 'info');
-        }
-      },
-
-      async fetchAndImportFromUrl() {
-        const urlInput = document.getElementById('import-export-url');
-        const exportUrl = (urlInput ? urlInput.value : '').trim();
-        const prog = document.getElementById('import-progress');
-        const fetchBtn = document.getElementById('import-fetch-btn');
-        const submitBtn = document.getElementById('import-submit-btn');
-
-        const setProg = (msg, isErr = false) => {
-          prog.textContent = msg;
-          prog.className = isErr
-            ? 'p-3 rounded-xl text-xs bg-red-50 border border-red-200 text-red-700 leading-relaxed'
-            : 'p-3 rounded-xl text-xs bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed';
-          prog.classList.remove('hidden');
-        };
-
-        if (!exportUrl) {
-          setProg('กรุณาระบุลิงก์ /api/export ก่อนกดดึงข้อมูล', true);
-          return;
-        }
-
-        if (fetchBtn) fetchBtn.disabled = true;
-        if (submitBtn) submitBtn.disabled = true;
-        setProg(`กำลังดึงข้อมูลจาก ${exportUrl} ...`);
-
-        let payload = null;
-        let authBlocked = false;
-
-        // 1. ลองดึงตรงจากเบราว์เซอร์ก่อน (พร้อม session cookie)
-        try {
-          const directRes = await fetch(exportUrl, { credentials: 'include' });
-          const directText = await directRes.text();
-          const parsed = JSON.parse(directText);
-          if (parsed && (Array.isArray(parsed.docs) || Array.isArray(parsed.replies))) {
-            payload = parsed;
-          }
-        } catch {}
-
-        // 2. ลองผ่าน Server Proxy ของแอป (/api/proxy-export)
-        if (!payload && !isGasEmbedded()) {
-          try {
-            const proxyRes = await fetch(`/api/proxy-export?url=${encodeURIComponent(exportUrl)}`);
-            const proxyData = await proxyRes.json();
-            if (proxyRes.ok && (Array.isArray(proxyData.docs) || Array.isArray(proxyData.replies))) {
-              payload = proxyData;
-            } else if (proxyData && proxyData.error === 'AUTH_REQUIRED') {
-              authBlocked = true;
-            }
-          } catch {}
-        }
-
-        if (!payload) {
-          if (fetchBtn) fetchBtn.disabled = false;
-          if (submitBtn) submitBtn.disabled = false;
-          setProg(
-            authBlocked
-              ? 'ไม่สามารถดึงข้ามเว็บอัตโนมัติได้ เพราะแอปเก่ายังติดระบบล็อกอินบัญชี Google — กรุณากดปุ่ม "คัดลอกสคริปต์ดึงข้อมูล + PDF ทั้งหมด" แล้วนำไปวางใน Console (F12) ของแท็บแอปเก่า หรือกด "เปิด /api/export ↗" แล้วคัดลอก JSON มาวางด้านล่างแทน'
-              : 'ดึงข้อมูลจากลิงก์ไม่สำเร็จ — กรุณากดปุ่ม "เปิด /api/export ↗" เพื่อคัดลอก JSON มาวางด้านล่าง หรือใช้สคริปต์ใน Console ของแท็บแอปเก่า',
-            true
-          );
-          return;
-        }
-
-        try {
-          await this.importPayload(payload, setProg);
-        } catch (err) {
-          setProg('นำเข้าไม่สำเร็จ: ' + err.message, true);
-        } finally {
-          if (fetchBtn) fetchBtn.disabled = false;
-          if (submitBtn) submitBtn.disabled = false;
-        }
-      },
-
-      async runImportFromJson() {
-        const raw = (document.getElementById('import-json-text').value || '').trim();
-        const prog = document.getElementById('import-progress');
-        const btn = document.getElementById('import-submit-btn');
-        const fetchBtn = document.getElementById('import-fetch-btn');
-        const setProg = (msg, isErr = false) => {
-          prog.textContent = msg;
-          prog.className = isErr
-            ? 'p-3 rounded-xl text-xs bg-red-50 border border-red-200 text-red-700 leading-relaxed'
-            : 'p-3 rounded-xl text-xs bg-amber-50 border border-amber-200 text-amber-900 leading-relaxed';
-          prog.classList.remove('hidden');
-        };
-
-        if (!raw) {
-          setProg('กรุณาเลือกไฟล์ .json หรือวางข้อมูล JSON จากแอปเก่าก่อนกดนำเข้า', true);
-          return;
-        }
-
-        let payload;
-        try {
-          payload = JSON.parse(raw);
-        } catch {
-          setProg('รูปแบบ JSON ไม่ถูกต้อง กรุณาคัดลอก JSON จาก /api/export ให้ครบถ้วน', true);
-          return;
-        }
-
-        btn.disabled = true;
-        if (fetchBtn) fetchBtn.disabled = true;
-        try {
-          await this.importPayload(payload, setProg);
-        } catch (err) {
-          setProg('นำเข้าไม่สำเร็จ: ' + err.message, true);
-        } finally {
-          btn.disabled = false;
-          if (fetchBtn) fetchBtn.disabled = false;
-        }
-      },
-
-      async importPayload(payload, setProg) {
-        const docs = Array.isArray(payload.docs) ? payload.docs : [];
-        const replies = Array.isArray(payload.replies) ? payload.replies : [];
-        if (docs.length === 0 && replies.length === 0) {
-          setProg('ไม่พบรายการ docs หรือ replies ในข้อมูล JSON', true);
-          return;
-        }
-
-        let importedDocs = 0;
-        let importedPdfs = 0;
-        let missedPdfs = 0;
-        let importedReplies = 0;
-        const urlInput = document.getElementById('import-export-url');
-        const oldOrigin = (() => {
-          try {
-            return new URL((urlInput && urlInput.value) || 'https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app/api/export').origin;
-          } catch {
-            return 'https://ais-dev-qbit3afohggyyrkyzrjzv4-343387795750.asia-east1.run.app';
-          }
-        })();
-
-        const existingDocIds = new Set(this.state.docs.map((d) => String(d.id)));
-        const existingReplyIds = new Set(this.state.replies.map((r) => String(r.id)));
-
-        for (let i = 0; i < docs.length; i++) {
-          const d = docs[i];
-          const idStr = String(d.id);
-          const existingDoc = this.state.docs.find((x) => String(x.id) === idStr);
-          setProg(`กำลังนำเข้าเรื่อง (${i + 1}/${docs.length}): ${d.title || idStr}...`);
-
-          if (!existingDocIds.has(idStr)) {
-            const docObj = {
-              id: idStr,
-              title: d.title || '',
-              description: d.description || '',
-              fileName: d.fileName || '',
-              driveFileId: d.driveFileId || '',
-              mimeType: d.mimeType || 'application/pdf',
-              fileSize: Number(d.fileSize) || 0,
-              createdAt: Number(d.createdAt) || Date.now(),
-              deadline: Number(d.deadline) || 0,
-              status: d.status || 'open',
-              closedAt: Number(d.closedAt) || 0,
-              noReply: Boolean(d.noReply),
-              replyCount: Number(d.replyCount) || 0,
-              viewCount: Number(d.viewCount) || 0,
-            };
-            try {
-              await callBackend('importDoc', { doc: docObj });
-            } catch {
-              await callBackend('saveDoc', { doc: docObj });
-            }
-            existingDocIds.add(idStr);
-            importedDocs += 1;
-          }
-
-          const hasTargetDriveId = Boolean((existingDoc && existingDoc.driveFileId) || d.driveFileId);
-          const needsPdf = !hasTargetDriveId;
-          if (needsPdf) {
-            let pdfBytes = null;
-            if (d.pdfBase64) {
-              pdfBytes = await base64ToUint8Fast(d.pdfBase64);
-            } else {
-              const candidates = [d.pdfDownloadUrl, d.pdfStreamUrl].filter(Boolean);
-              for (const rawUrl of candidates) {
-                if (pdfBytes) break;
-                try {
-                  const absPdfUrl = new URL(rawUrl, oldOrigin).toString();
-                  const pdfRes = await fetch(absPdfUrl, { credentials: 'include' });
-                  if (pdfRes.ok) {
-                    const ct = pdfRes.headers.get('content-type') || '';
-                    if (!ct.includes('text/html') && !ct.includes('application/json')) {
-                      const arr = new Uint8Array(await pdfRes.arrayBuffer());
-                      if (arr.length > 100) pdfBytes = arr;
-                    }
-                  }
-                } catch {}
-              }
-            }
-
-            if (pdfBytes && pdfBytes.length > 0) {
-              setProg(`กำลังอัปโหลดไฟล์ PDF (${i + 1}/${docs.length}): ${d.fileName || d.title}...`);
-              const fakeFile = new File([pdfBytes], d.fileName || `${d.title || idStr}.pdf`, { type: 'application/pdf' });
-              await uploadFileInChunks(idStr, fakeFile);
-              pdfMemCache.set(idStr, pdfBytes);
-              await pdfIdb.save(idStr, pdfBytes).catch(() => {});
-              importedPdfs += 1;
-            } else if (d.hasFileOnServer || d.pdfDownloadUrl) {
-              missedPdfs += 1;
-            }
-          }
-        }
-
-        for (let j = 0; j < replies.length; j++) {
-          const r = replies[j];
-          const rId = String(r.id);
-          if (existingReplyIds.has(rId)) continue;
-          if (j % 5 === 0) setProg(`กำลังนำเข้าคำตอบ (${j + 1}/${replies.length})...`);
-          const repObj = {
-            id: rId,
-            docId: r.docId || '',
-            docTitle: r.docTitle || '',
-            name: r.name || '',
-            response: r.response || '',
-            comment: r.comment || '',
-            ts: Number(r.ts) || Date.now(),
-            timeFormatted: r.timeFormatted || '',
-          };
-          try {
-            await callBackend('importReply', { reply: repObj });
-          } catch {
-            await callBackend('submitReply', { reply: repObj });
-          }
-          existingReplyIds.add(rId);
-          importedReplies += 1;
-        }
-
-        this.closeImportModal();
-        this.showSuccessModal(
-          'นำเข้าข้อมูลสำเร็จ',
-          `นำเข้าหนังสือ ${importedDocs} เรื่อง, ไฟล์ PDF ${importedPdfs} ไฟล์ และคำตอบ ${importedReplies} รายการเรียบร้อยแล้ว` +
-            (missedPdfs > 0 ? ` (มีไฟล์ PDF ${missedPdfs} ไฟล์ที่ติดล็อกอินแอปเก่า สามารถรันสคริปต์ใน Console ของแอปเก่าเพื่อดูด PDF เพิ่ม หรือกด "แก้ไข" เพื่อแนบไฟล์ใหม่)` : '')
-        );
-        await this.loadData();
       },
 
       // -------- TOAST --------
