@@ -437,6 +437,15 @@
           <label class="block text-xs font-semibold text-stone-700 mb-1.5">เปลี่ยนไฟล์แนบใหม่ (เฉพาะไฟล์ PDF)</label>
           <input id="edit-file" type="file" accept=".pdf,application/pdf" onchange="app.handleEditFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
           <div id="edit-current-file" class="mt-2 flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200 min-w-0 overflow-hidden"></div>
+          <div id="edit-upload-progress-wrap" class="hidden mt-2.5 space-y-1">
+            <div class="flex justify-between text-[11px] font-semibold text-stone-700">
+              <span id="edit-upload-progress-text">กำลังอัปโหลดไฟล์ใหม่ขึ้น Google Drive...</span>
+              <span id="edit-upload-progress-pct" class="font-mono-num">0%</span>
+            </div>
+            <div class="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden shadow-inner">
+              <div id="edit-upload-progress-bar" class="h-full bg-emerald-600 transition-all duration-200 w-0"></div>
+            </div>
+          </div>
         </div>
         <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-200">
           <button type="button" onclick="app.closeEditModal()" class="min-h-[42px] px-4 py-2 text-xs sm:text-sm font-medium text-stone-700 hover:bg-stone-200/70 rounded-xl">ยกเลิก</button>
@@ -1575,18 +1584,30 @@
 
           if (newFile) {
             invalidatePdfCache(doc.id);
+            const progWrap = document.getElementById('edit-upload-progress-wrap');
+            const progressBar = document.getElementById('edit-upload-progress-bar');
+            const progressPct = document.getElementById('edit-upload-progress-pct');
+            const progressText = document.getElementById('edit-upload-progress-text');
+            if (progWrap) progWrap.classList.remove('hidden');
+
             const { bytes, lastRes } = await uploadFileInChunks(doc.id, newFile, (curr, total) => {
-              const pct = total > 0 ? Math.round((curr / total) * 100) : 0;
+              const pct = total > 0 ? Math.min(100, Math.round((curr / total) * 100)) : 0;
+              if (progressBar) progressBar.style.width = pct + '%';
+              if (progressPct) progressPct.textContent = pct + '%';
+              if (progressText) progressText.textContent = `กำลังอัปโหลดไฟล์ใหม่ขึ้น Google Drive (${curr}/${total} ชิ้น)...`;
               this.showToast(`กำลังอัปโหลดไฟล์ใหม่ (${curr}/${total} — ${pct}%)...`, 'info');
             });
             pdfMemCache.set(doc.id, bytes);
             await pdfIdb.save(doc.id, bytes).catch(() => {});
+            if (progWrap) progWrap.classList.add('hidden');
             if (lastRes && lastRes.completed && !lastRes.driveFileId) {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive');
             }
           }
 
           this.closeEditModal();
+          const progWrap = document.getElementById('edit-upload-progress-wrap');
+          if (progWrap) progWrap.classList.add('hidden');
           this.showSuccessModal('บันทึกสำเร็จ', `อัปเดตข้อมูลเรื่อง "${title}" เรียบร้อยแล้ว`);
           await this.loadData();
         } catch (err) {
@@ -1715,11 +1736,6 @@
           <div class="my-auto flex flex-col items-center gap-3 text-center px-4">
             <div class="w-8 h-8 border-2 border-[#c9a227] border-t-transparent rounded-full animate-spin"></div>
             <div class="text-amber-300 text-xs sm:text-sm font-medium">กำลังเปิดเอกสาร PDF...</div>
-            ${
-              doc.driveFileId
-                ? `<a href="https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/view" target="_blank" rel="noopener noreferrer" class="mt-1 px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-stone-200 rounded-lg border border-white/15">เปิดผ่าน Google Drive โดยตรง ↗</a>`
-                : ''
-            }
           </div>`;
 
         try {
@@ -1733,23 +1749,12 @@
           this.state.viewingPdfBytes = bytes;
           await this.renderPdfBytes(bytes, docId);
         } catch (err) {
-          if (doc.driveFileId) {
-            container.innerHTML = `
-              <div class="w-full max-w-4xl flex flex-col gap-2 h-full">
-                <div class="flex items-center justify-between gap-2 bg-[#1b1d1f] text-stone-300 px-3 py-2 rounded-xl text-xs">
-                  <span>กำลังแสดงตัวอย่างผ่าน Google Drive</span>
-                  <a href="https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/view" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-[#c9a227] text-[#1c220f] font-semibold rounded-lg shrink-0">เปิดในแท็บใหม่ ↗</a>
-                </div>
-                <iframe src="https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/preview" class="w-full flex-1 bg-white rounded-xl border-0"></iframe>
-              </div>`;
-          } else {
             container.innerHTML = `
               <div class="my-auto text-center text-stone-300 p-6 bg-[#1b1d1f] rounded-2xl border border-white/10 max-w-md space-y-3">
                 <p class="text-sm text-red-400 font-semibold">ไม่พบไฟล์แนบใน Google Drive</p>
                 <p class="text-xs text-stone-400">การอัปโหลดไฟล์ก่อนหน้านี้อาจยังไม่สมบูรณ์ หรือไฟล์ยังไม่ถูกบันทึกใน Google Drive กรุณากดแก้ไข (✏️) ในหน้าผู้ดูแลระบบเพื่ออัปโหลดไฟล์ใหม่อีกครั้ง</p>
                 <button onclick="app.closeSubView()" class="px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 rounded-xl text-white">กลับหน้ารายการ</button>
               </div>`;
-          }
         }
       },
 
