@@ -1092,7 +1092,6 @@
           document.getElementById('admin-pin-input').value = '';
           this.updateVisibleSections();
           this.renderAdminTable();
-          this.showSuccessModal('เข้าสู่ระบบผู้ดูแลสำเร็จ', 'ปลดล็อกสิทธิ์ผู้ดูแลระบบเรียบร้อยแล้ว', 'success');
         }
       },
 
@@ -1105,14 +1104,12 @@
           const errEl = document.getElementById('admin-pin-error');
           errEl.textContent = 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
           errEl.classList.remove('hidden');
-          this.showSuccessModal('รหัสผ่านไม่ถูกต้อง', 'กรุณาตรวจสอบรหัสผู้ดูแลระบบแล้วลองใหม่อีกครั้ง', 'error');
         }
       },
 
       adminLogout() {
         this.state.adminUnlocked = false;
         this.updateVisibleSections();
-        this.showSuccessModal('ออกจากระบบแล้ว', 'ออกจากระบบผู้ดูแลเรียบร้อยแล้ว', 'info');
       },
 
       // -------- READER VIEW --------
