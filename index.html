@@ -254,6 +254,15 @@
                 <label class="block text-xs sm:text-sm font-semibold text-stone-800 mb-1.5">แนบไฟล์จากเครื่อง (เฉพาะไฟล์ PDF)</label>
                 <input id="add-file" type="file" accept=".pdf,application/pdf" onchange="app.handleAddFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
                 <div id="add-file-info" class="hidden mt-2 flex items-center justify-between gap-2 px-2.5 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
+                <div id="upload-progress-wrap" class="hidden mt-2.5 space-y-1">
+                  <div class="flex justify-between text-[11px] font-semibold text-stone-700">
+                    <span id="upload-progress-text">กำลังอัปโหลดไฟล์ขึ้น Google Drive...</span>
+                    <span id="upload-progress-pct" class="font-mono-num">0%</span>
+                  </div>
+                  <div class="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden shadow-inner">
+                    <div id="upload-progress-bar" class="h-full bg-emerald-600 transition-all duration-200 w-0"></div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1224,12 +1233,22 @@
           docSaved = true;
 
           if (file) {
+            const progWrap = document.getElementById('upload-progress-wrap');
+            const progressBar = document.getElementById('upload-progress-bar');
+            const progressPct = document.getElementById('upload-progress-pct');
+            const progressText = document.getElementById('upload-progress-text');
+            if (progWrap) progWrap.classList.remove('hidden');
+
             const { bytes, lastRes } = await uploadFileInChunks(docId, file, (curr, total) => {
-              const pct = total > 0 ? Math.round((curr / total) * 100) : 0;
+              const pct = total > 0 ? Math.min(100, Math.round((curr / total) * 100)) : 0;
+              if (progressBar) progressBar.style.width = pct + '%';
+              if (progressPct) progressPct.textContent = pct + '%';
+              if (progressText) progressText.textContent = `กำลังอัปโหลดไฟล์ขึ้น Google Drive (${curr}/${total} ชิ้น)...`;
               this.showAdminMsg(`กำลังอัปโหลดไฟล์แนบขึ้น Google Drive (${curr}/${total} — ${pct}%)...`, 'info');
             });
             pdfMemCache.set(docId, bytes);
             await pdfIdb.save(docId, bytes).catch(() => {});
+            if (progWrap) progWrap.classList.add('hidden');
             if (lastRes && lastRes.completed && !lastRes.driveFileId) {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive (กรุณาอัปเดต Code.gs)');
             }
@@ -1238,6 +1257,8 @@
           this.state.activeDocId = docId;
           document.getElementById('add-doc-form').reset();
           this.clearAddFile();
+          const progWrap = document.getElementById('upload-progress-wrap');
+          if (progWrap) progWrap.classList.add('hidden');
           this.toggleAddDeadlineField();
           document.getElementById('add-deadline').value = toDatetimeLocalValue(Date.now() + CONFIG.DEFAULT_DEADLINE_MS);
 
