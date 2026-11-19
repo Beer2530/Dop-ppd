@@ -39,7 +39,8 @@ function doGet(e) {
   var action = params.action || '';
   try {
     if (action === 'getState') {
-      return jsonResponse_(getAppState());
+      var isLite = params.lite === '1' || params.lite === 'true';
+      return jsonResponse_(getAppState(isLite));
     } else if (action === 'getPdf') {
       return jsonResponse_(getPdfBase64(params.fileId));
     } else if (action === 'listDriveFiles') {
@@ -79,7 +80,7 @@ function doPost(e) {
     var result;
 
     if (action === 'getState') {
-      result = getAppState();
+      result = getAppState(Boolean(data.lite));
     } else if (action === 'listDriveFiles') {
       result = listDriveFiles();
     } else if (action === 'saveDoc') {
@@ -182,10 +183,26 @@ function getOrCreateTempFolder_() {
 // CORE ACTIONS
 // ----------------------------------------------------------------------------
 
+function clearStateCache_() {
+  try {
+    var cache = CacheService.getScriptCache();
+    cache.removeAll(['app_state_lite_v1', 'app_state_full_v1']);
+  } catch (e) {}
+}
+
 /**
- * ดึงสถานะทั้งหมด (เอกสารเวียนทราบ และการตอบกลับ)
+ * ดึงสถานะทั้งหมด (รองรับโหมด lite สำหรับเปิดหน้าแรกเร็วขึ้นโดยไม่อ่านชีต Replies)
  */
-function getAppState() {
+function getAppState(isLite) {
+  var liteMode = Boolean(isLite);
+  var cacheKey = liteMode ? 'app_state_lite_v1' : 'app_state_full_v1';
+  try {
+    var cached = CacheService.getScriptCache().get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (cacheReadErr) {}
+
   var db = getDb_();
   var docData = db.docs.getDataRange().getValues();
   var docs = [];
@@ -216,29 +233,39 @@ function getAppState() {
     return (b.createdAt || 0) - (a.createdAt || 0);
   });
 
-  var replyData = db.replies.getDataRange().getValues();
   var replies = [];
-  if (replyData.length > 1) {
-    for (var j = 1; j < replyData.length; j++) {
-      var rRow = replyData[j];
-      if (!rRow[0]) continue;
-      var choiceVal = String(rRow[4] || '');
-      var tsVal = Number(rRow[6]) || 0;
-      replies.push({
-        id: String(rRow[0]),
-        docId: String(rRow[1] || ''),
-        docTitle: String(rRow[2] || ''),
-        name: String(rRow[3] || ''),
-        choice: choiceVal,
-        response: choiceVal,
-        comment: String(rRow[5] || ''),
-        createdAt: tsVal,
-        ts: tsVal
-      });
+  if (!liteMode) {
+    var replyData = db.replies.getDataRange().getValues();
+    if (replyData.length > 1) {
+      for (var j = 1; j < replyData.length; j++) {
+        var rRow = replyData[j];
+        if (!rRow[0]) continue;
+        var choiceVal = String(rRow[4] || '');
+        var tsVal = Number(rRow[6]) || 0;
+        replies.push({
+          id: String(rRow[0]),
+          docId: String(rRow[1] || ''),
+          docTitle: String(rRow[2] || ''),
+          name: String(rRow[3] || ''),
+          choice: choiceVal,
+          response: choiceVal,
+          comment: String(rRow[5] || ''),
+          createdAt: tsVal,
+          ts: tsVal
+        });
+      }
     }
   }
 
-  return { success: true, docs: docs, replies: replies };
+  var result = { success: true, docs: docs, replies: replies, lite: liteMode };
+  try {
+    var jsonStr = JSON.stringify(result);
+    if (jsonStr.length < 95000) {
+      CacheService.getScriptCache().put(cacheKey, jsonStr, 60);
+    }
+  } catch (cacheWriteErr) {}
+
+  return result;
 }
 
 /**
@@ -385,6 +412,7 @@ function saveDocument(doc) {
     sheet.appendRow(rowValues);
   }
 
+  clearStateCache_();
   return { success: true, docId: doc.id, driveFileId: rowValues[4], fileName: rowValues[3], fileSize: rowValues[6] };
 }
 
@@ -468,6 +496,7 @@ function uploadFileChunk(docId, index, total, chunkBase64, fileName, mimeType) {
     }
   }
 
+  clearStateCache_();
   return {
     success: true,
     completed: true,
@@ -531,6 +560,7 @@ function deleteDocAttachmentOnly(docId) {
       break;
     }
   }
+  clearStateCache_();
   return { success: true };
 }
 
@@ -564,6 +594,7 @@ function deleteDocument(docId) {
     }
   }
 
+  clearStateCache_();
   return { success: true };
 }
 
@@ -584,6 +615,7 @@ function toggleDocStatus(docId, newStatus) {
       break;
     }
   }
+  clearStateCache_();
   return { success: true };
 }
 
@@ -619,6 +651,7 @@ function submitReply(reply) {
     }
   }
 
+  clearStateCache_();
   return { success: true, replyId: replyId };
 }
 
@@ -637,5 +670,6 @@ function incrementDocView(docId) {
       break;
     }
   }
+  clearStateCache_();
   return { success: true };
 }

@@ -14,13 +14,24 @@
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
   <link rel="preconnect" href="https://script.google.com" crossorigin />
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
+  <link rel="preload" as="image" href="/assets/aistudio/logo-1_511dba15.png" />
   <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin />
+
+  <!-- Early parallel state fetch before Tailwind CSS & PDF.js finish loading -->
+  <script>
+    window.__GAS_URL = 'https://script.google.com/macros/s/AKfycbwrMHuw7YqK7DzL0OaZFbMz0sI1nAZW_OHxr33QNa9vLrCYKlrw6NzRynBWtZgTAGAxhQ/exec';
+    window.__earlyStatePromise = (typeof fetch === 'function')
+      ? fetch(window.__GAS_URL + '?action=getState&lite=1&_t=' + Date.now(), { method: 'GET' })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .catch(function() { return null; })
+      : null;
+  </script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- PDF.js UMD -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- PDF.js UMD (deferred so HTML & first paint never block) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
     *, *::before, *::after {
@@ -168,15 +179,15 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-2.5 items-stretch min-w-0">
           <div class="lg:col-span-6 relative min-w-0">
             <svg class="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="search-keyword" type="text" oninput="app.renderReaderList()" placeholder="ค้นหาชื่อเรื่อง, รายละเอียด, ชื่อไฟล์..." class="w-full h-10 pl-9 pr-3 bg-[#12180b] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
+            <input id="search-keyword" type="text" oninput="app.onReaderFilterChange()" placeholder="ค้นหาชื่อเรื่อง, รายละเอียด, ชื่อไฟล์..." class="w-full h-10 pl-9 pr-3 bg-[#12180b] border border-white/15 rounded-xl text-xs sm:text-sm text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#c9a227]" />
           </div>
           <div class="lg:col-span-6 flex items-center gap-1.5 min-w-0">
             <div class="flex-1 min-w-0 overflow-hidden">
-              <input id="filter-start-date" type="date" onchange="app.renderReaderList()" aria-label="ตั้งแต่วันที่" title="ตั้งแต่วันที่" class="date-input-dark date-input-compact w-full h-9 sm:h-10 px-2 bg-[#12180b] border border-white/15 rounded-xl text-[11px] sm:text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
+              <input id="filter-start-date" type="date" onchange="app.onReaderFilterChange()" aria-label="ตั้งแต่วันที่" title="ตั้งแต่วันที่" class="date-input-dark date-input-compact w-full h-9 sm:h-10 px-2 bg-[#12180b] border border-white/15 rounded-xl text-[11px] sm:text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
             </div>
             <span class="text-stone-400 text-[11px] shrink-0">ถึง</span>
             <div class="flex-1 min-w-0 overflow-hidden">
-              <input id="filter-end-date" type="date" onchange="app.renderReaderList()" aria-label="ถึงวันที่" title="ถึงวันที่" class="date-input-dark date-input-compact w-full h-9 sm:h-10 px-2 bg-[#12180b] border border-white/15 rounded-xl text-[11px] sm:text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
+              <input id="filter-end-date" type="date" onchange="app.onReaderFilterChange()" aria-label="ถึงวันที่" title="ถึงวันที่" class="date-input-dark date-input-compact w-full h-9 sm:h-10 px-2 bg-[#12180b] border border-white/15 rounded-xl text-[11px] sm:text-xs text-stone-200 focus:outline-none focus:ring-1 focus:ring-[#c9a227]" />
             </div>
             <button onclick="app.resetFilters()" class="h-9 sm:h-10 px-2.5 sm:px-3 text-stone-300 hover:text-white bg-[#12180b] hover:bg-[#2a371a] border border-white/15 rounded-xl text-[11px] sm:text-xs font-medium shrink-0 transition-colors whitespace-nowrap" title="ล้างตัวกรอง">ล้าง</button>
           </div>
@@ -322,6 +333,7 @@
             <tbody id="admin-docs-tbody" class="divide-y divide-stone-200/80"></tbody>
           </table>
         </div>
+        <div id="admin-load-more-wrap" class="hidden p-4 border-t border-stone-200 bg-stone-50/60 text-center"></div>
       </div>
     </section>
 
@@ -548,12 +560,15 @@
   <!-- ==================== APPLICATION SCRIPT ==================== -->
   <script>
     // Web App URL จากการ Deploy Google Apps Script (ลงท้ายด้วย /exec)
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwrMHuw7YqK7DzL0OaZFbMz0sI1nAZW_OHxr33QNa9vLrCYKlrw6NzRynBWtZgTAGAxhQ/exec';
+    const GAS_WEB_APP_URL = window.__GAS_URL || 'https://script.google.com/macros/s/AKfycbwrMHuw7YqK7DzL0OaZFbMz0sI1nAZW_OHxr33QNa9vLrCYKlrw6NzRynBWtZgTAGAxhQ/exec';
 
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    function ensurePdfWorkerSrc() {
+      if (window.pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
     }
+    ensurePdfWorkerSrc();
 
     const CONFIG = {
       ADMIN_PIN_HASH: 'fdc422fd',
@@ -593,7 +608,7 @@
       if (isGasEmbedded()) {
         return new Promise((resolve, reject) => {
           const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
-          if (action === 'getState') runner.getAppState();
+          if (action === 'getState') runner.getAppState(Boolean(payload && payload.lite));
           else if (action === 'saveDoc') runner.saveDocument(payload.doc);
           else if (action === 'uploadChunk') runner.uploadFileChunk(payload.docId, payload.index, payload.total, payload.chunkBase64, payload.fileName, payload.mimeType);
           else if (action === 'deleteDoc') runner.deleteDocument(payload.docId);
@@ -628,10 +643,12 @@
 
       // 1. Dual-route optimization for 'getState' (Try GET first for speed; fallback to POST)
       if (action === 'getState') {
+        const isLite = Boolean(payload && payload.lite);
+        const liteParam = isLite ? '&lite=1' : '';
         try {
-          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getState&_t=${Date.now()}`, {
+          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getState${liteParam}&_t=${Date.now()}`, {
             method: 'GET',
-            signal: makeTimeoutSignal(8000),
+            signal: makeTimeoutSignal(12000),
           });
           return await parseGasResponse(getRes);
         } catch (getErr) {
@@ -639,8 +656,8 @@
           const postRes = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'getState' }),
-            signal: makeTimeoutSignal(15000),
+            body: JSON.stringify({ action: 'getState', lite: isLite }),
+            signal: makeTimeoutSignal(18000),
           });
           return await parseGasResponse(postRes);
         }
@@ -829,6 +846,7 @@
     let sharedPdfWorker = null;
 
     function getSharedPdfWorker() {
+      ensurePdfWorkerSrc();
       if (!sharedPdfWorker && window.pdfjsLib && pdfjsLib.PDFWorker) {
         try {
           sharedPdfWorker = new pdfjsLib.PDFWorker({ name: 'circular-pdf-worker' });
@@ -871,9 +889,14 @@
         reportDocId: null,
         reportFilter: 'all',
         hasLoadedOnce: false,
+        isLiteState: false,
+        readerLimit: 15,
+        adminLimit: 25,
       },
 
       init() {
+        ensurePdfWorkerSrc();
+
         // 1. Instant 0ms Cache Load: แสดงข้อมูลหนังสือเวียนทราบทันทีจากหน่วยความจำในเครื่อง
         try {
           const cachedStr = localStorage.getItem(CONFIG.STORAGE_STATE_CACHE_KEY);
@@ -905,10 +928,15 @@
           })()
         );
 
-        // Pre-warm PDF.js Web Worker early so first PDF opens without worker boot lag
-        setTimeout(() => getSharedPdfWorker(), 80);
+        // Pre-warm PDF.js Web Worker when browser is idle so first render stays smooth
+        const warmWorker = () => getSharedPdfWorker();
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(warmWorker, { timeout: 1500 });
+        } else {
+          setTimeout(warmWorker, 600);
+        }
 
-        // ดึงข้อมูลสดล่าสุดจาก Google Sheets ในพื้นหลัง
+        // ดึงข้อมูลสดล่าสุด (ใช้ early pre-fetch ที่เริ่มไว้ตั้งแต่เปิดหน้าเว็บ)
         this.loadData();
 
         setInterval(() => {
@@ -929,7 +957,7 @@
       },
 
       // -------- DATA LAYER (Google Apps Script -> Google Sheets & Drive) --------
-      async loadData(isManual = false) {
+      async loadData(isManual = false, forceFull = false) {
         const btn = document.getElementById('btn-refresh');
         const badge = document.getElementById('sync-status-badge');
         const dot = document.getElementById('sync-status-dot');
@@ -940,18 +968,37 @@
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
         if (text) text.textContent = 'กำลังซิงค์...';
 
+        const needFull = Boolean(forceFull || this.state.adminUnlocked);
+
         try {
-          const res = await callBackend('getState');
+          let res = null;
+          if (!isManual && !needFull && window.__earlyStatePromise) {
+            const earlyPromise = window.__earlyStatePromise;
+            window.__earlyStatePromise = null;
+            try {
+              const earlyRes = await earlyPromise;
+              if (earlyRes && earlyRes.success !== false && Array.isArray(earlyRes.docs)) {
+                res = earlyRes;
+              }
+            } catch {}
+          }
+          if (!res) {
+            res = await callBackend('getState', { lite: !needFull });
+          }
+
           if (res && res.docs) {
             this.state.docs = res.docs;
-            this.state.replies = res.replies || [];
+            this.state.isLiteState = Boolean(res.lite);
+            if (!this.state.isLiteState || (Array.isArray(res.replies) && res.replies.length > 0)) {
+              this.state.replies = res.replies || [];
+            }
             this.state.hasLoadedOnce = true;
 
-            // บันทึกแคชลง LocalStorage เพื่อให้เปิดหน้าเว็บได้ทันทีในครั้งถัดไป
+            // บันทึกแคชลง LocalStorage (เก็บเฉพาะรายการล่าสุด 150 เรื่องเพื่อไม่ให้เต็มพื้นที่บนมือถือ)
             try {
               localStorage.setItem(CONFIG.STORAGE_STATE_CACHE_KEY, JSON.stringify({
-                docs: res.docs,
-                replies: res.replies || [],
+                docs: res.docs.slice(0, 150),
+                replies: this.state.isLiteState ? [] : (res.replies || []).slice(0, 200),
                 timestamp: Date.now()
               }));
             } catch (err) {}
@@ -968,14 +1015,12 @@
         } catch (err) {
           console.error('loadData error:', err);
           if (this.state.hasLoadedOnce) {
-            // หากมีแคชแสดงอยู่แล้ว ไม่ต้องลบหน้าจอ ให้แสดงข้อความเตือนนุ่มนวล
             if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
             if (text) text.textContent = `ข้อมูลแคช (${this.state.docs.length} เรื่อง)`;
             if (isManual) {
               this.showToast('การเชื่อมต่อไม่เสถียร แสดงข้อมูลล่าสุดในเครื่อง: ' + err.message, 'warning');
             }
           } else {
-            // หากไม่มีแคชและโหลดไม่สำเร็จ ให้แสดงหน้าต่างลองใหม่
             if (dot) dot.className = 'w-2 h-2 rounded-full bg-red-500';
             if (text) text.textContent = 'เชื่อมต่อไม่สำเร็จ';
             this.showToast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + err.message, 'error');
@@ -1092,6 +1137,9 @@
           document.getElementById('admin-pin-input').value = '';
           this.updateVisibleSections();
           this.renderAdminTable();
+          if (this.state.isLiteState) {
+            this.loadData(false, true).catch(() => {});
+          }
         }
       },
 
@@ -1115,6 +1163,7 @@
       // -------- READER VIEW --------
       setFilter(f) {
         this.state.filter = f;
+        this.state.readerLimit = 15;
         document.querySelectorAll('.filter-pill').forEach((btn) => {
           const isAct = btn.getAttribute('data-filter') === f;
           btn.className = isAct
@@ -1124,11 +1173,27 @@
         this.renderReaderList();
       },
 
+      onReaderFilterChange() {
+        this.state.readerLimit = 15;
+        this.renderReaderList();
+      },
+
       resetFilters() {
         document.getElementById('search-keyword').value = '';
         document.getElementById('filter-start-date').value = '';
         document.getElementById('filter-end-date').value = '';
+        this.state.readerLimit = 15;
         this.renderReaderList();
+      },
+
+      loadMoreReader() {
+        this.state.readerLimit += 15;
+        this.renderReaderList();
+      },
+
+      loadMoreAdmin() {
+        this.state.adminLimit += 25;
+        this.renderAdminTable();
       },
 
       getCountdownInfo(doc, now = Date.now()) {
@@ -1149,31 +1214,43 @@
       },
 
       updateCountdownsOnly() {
+        if (this.state.tab !== 'reader') return;
+        const els = document.querySelectorAll('#reader-docs-list [data-cd-id]');
+        if (!els.length) return;
         const now = Date.now();
-        for (const doc of this.state.docs) {
-          const el = document.getElementById(`cd-${doc.id}`);
-          if (!el) continue;
+        const docMap = new Map();
+        for (const doc of this.state.docs) docMap.set(doc.id, doc);
+        els.forEach((el) => {
+          const doc = docMap.get(el.getAttribute('data-cd-id'));
+          if (!doc) return;
           const info = this.getCountdownInfo(doc, now);
-          if (!info) continue;
-          el.textContent = info.text;
-          el.className = `inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
+          if (!info) return;
+          if (el.textContent !== info.text) el.textContent = info.text;
+          const targetCls = `inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
             info.closed
               ? 'bg-red-50 text-red-700 border border-red-200'
               : info.urgent
               ? 'bg-amber-50 text-amber-800 border border-amber-300'
               : 'bg-[#edf2e0] text-[#283416] border border-[#cad5b2]'
           }`;
-        }
+          if (el.className !== targetCls) el.className = targetCls;
+        });
       },
 
       renderAll() {
         this.renderReaderList();
-        this.renderAdminTable();
+        if (this.state.tab === 'admin' && this.state.adminUnlocked) {
+          this.renderAdminTable();
+        }
       },
 
       renderReaderList() {
         if (!this.state.hasLoadedOnce) return;
         const container = document.getElementById('reader-docs-list');
+        if (this._readerMoreObserver) {
+          this._readerMoreObserver.disconnect();
+          this._readerMoreObserver = null;
+        }
         const kw = (document.getElementById('search-keyword').value || '').trim().toLowerCase();
         const startStr = document.getElementById('filter-start-date').value;
         const endStr = document.getElementById('filter-end-date').value;
@@ -1210,7 +1287,10 @@
           return;
         }
 
-        container.innerHTML = filtered
+        const visibleDocs = filtered.slice(0, this.state.readerLimit);
+        const remainingCount = filtered.length - visibleDocs.length;
+
+        const cardsHtml = visibleDocs
           .map((d) => {
             const isOpen = d.status === 'open' && !d.noReply && Number(d.deadline) > now;
             const replied = myReplied[d.id];
@@ -1245,7 +1325,7 @@
 
                 ${
                   cd
-                    ? `<div class="mt-2.5"><span id="cd-${escHtml(d.id)}" class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
+                    ? `<div class="mt-2.5"><span id="cd-${escHtml(d.id)}" data-cd-id="${escHtml(d.id)}" class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold font-mono-num ${
                         cd.closed
                           ? 'bg-red-50 text-red-700 border border-red-200'
                           : cd.urgent
@@ -1287,6 +1367,30 @@
               </article>`;
           })
           .join('');
+
+        const moreHtml = remainingCount > 0
+          ? `<div id="reader-load-more-wrap" class="pt-1 text-center">
+               <button type="button" onclick="app.loadMoreReader()" class="w-full sm:w-auto min-h-[42px] px-5 py-2.5 text-xs sm:text-sm font-semibold text-[#1e2713] bg-[#fafaf7] hover:bg-[#eef2e3] border border-[#c9a227]/60 rounded-xl shadow-md transition-all">
+                 แสดงหนังสือเพิ่มเติม (เหลืออีก ${remainingCount} เรื่อง)
+               </button>
+             </div>`
+          : '';
+
+        container.innerHTML = cardsHtml + moreHtml;
+
+        if (remainingCount > 0 && 'IntersectionObserver' in window) {
+          const sentinel = document.getElementById('reader-load-more-wrap');
+          if (sentinel) {
+            this._readerMoreObserver = new IntersectionObserver((entries) => {
+              if (entries.some((e) => e.isIntersecting)) {
+                this._readerMoreObserver.disconnect();
+                this._readerMoreObserver = null;
+                this.loadMoreReader();
+              }
+            }, { rootMargin: '250px' });
+            this._readerMoreObserver.observe(sentinel);
+          }
+        }
       },
 
       // -------- ADD / EDIT / DELETE DOCS (PDF ONLY, SAVED TO GOOGLE DRIVE PERMANENTLY) --------
@@ -1454,6 +1558,7 @@
       renderAdminTable() {
         const tbody = document.getElementById('admin-docs-tbody');
         const mobileList = document.getElementById('admin-docs-mobile');
+        const moreWrap = document.getElementById('admin-load-more-wrap');
         document.getElementById('admin-doc-count').textContent = this.state.docs.length;
 
         if (this.state.docs.length === 0) {
@@ -1461,11 +1566,15 @@
           if (mobileList) {
             mobileList.innerHTML = `<div class="py-8 px-4 text-center text-stone-400 text-xs">ยังไม่มีรายการหนังสือเวียนทราบ</div>`;
           }
+          if (moreWrap) moreWrap.classList.add('hidden');
           return;
         }
 
+        const visibleDocs = this.state.docs.slice(0, this.state.adminLimit);
+        const remainingAdmin = this.state.docs.length - visibleDocs.length;
+
         if (mobileList) {
-          mobileList.innerHTML = this.state.docs
+          mobileList.innerHTML = visibleDocs
             .map((d) => {
               const hasFile = Boolean(d.driveFileId || d.fileName);
               const isActive = this.state.activeDocId === d.id;
@@ -1515,7 +1624,7 @@
             .join('');
         }
 
-        tbody.innerHTML = this.state.docs
+        tbody.innerHTML = visibleDocs
           .map((d) => {
             const hasFile = Boolean(d.driveFileId || d.fileName);
             const isActive = this.state.activeDocId === d.id;
@@ -1567,6 +1676,15 @@
               </tr>`;
           })
           .join('');
+
+        if (moreWrap) {
+          if (remainingAdmin > 0) {
+            moreWrap.innerHTML = `<button type="button" onclick="app.loadMoreAdmin()" class="min-h-[38px] px-4 py-2 text-xs font-semibold text-[#1e2713] bg-white hover:bg-[#edf2e0] border border-[#b4c298] rounded-xl shadow-sm">แสดงรายการเพิ่มเติม (+25) — เหลืออีก ${remainingAdmin} เรื่อง</button>`;
+            moreWrap.classList.remove('hidden');
+          } else {
+            moreWrap.classList.add('hidden');
+          }
+        }
       },
 
       async toggleDocStatus(docId) {
@@ -2054,14 +2172,30 @@
       },
 
       async prefetchRecentPdfs() {
-        const candidates = this.state.docs
-          .filter((d) => d.driveFileId && (!d.fileSize || Number(d.fileSize) <= 18 * 1024 * 1024))
-          .slice(0, 6);
-        if (candidates.length === 0) return;
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && (conn.saveData || /2g|3g/i.test(conn.effectiveType || ''))) {
+          return;
+        }
+        if (this._prefetchScheduled) return;
+        this._prefetchScheduled = true;
 
-        const CONCURRENCY = 2;
-        for (let i = 0; i < candidates.length; i += CONCURRENCY) {
-          await Promise.allSettled(candidates.slice(i, i + CONCURRENCY).map((d) => this.prefetchPdf(d.id)));
+        const runPrefetch = async () => {
+          try {
+            const candidates = this.state.docs
+              .filter((d) => d.driveFileId && (!d.fileSize || Number(d.fileSize) <= 5 * 1024 * 1024))
+              .slice(0, 2);
+            for (const d of candidates) {
+              await this.prefetchPdf(d.id);
+            }
+          } finally {
+            this._prefetchScheduled = false;
+          }
+        };
+
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(() => runPrefetch(), { timeout: 2500 });
+        } else {
+          setTimeout(runPrefetch, 1500);
         }
       },
 
@@ -2392,7 +2526,7 @@
       },
 
       // -------- REPORT VIEW --------
-      openReportView(docId) {
+      async openReportView(docId) {
         const doc = this.state.docs.find((d) => d.id === docId);
         if (!doc) return;
         this.state.savedScrollY = window.scrollY;
@@ -2404,6 +2538,11 @@
         document.getElementById('view-report').classList.remove('hidden');
         document.getElementById('report-title').textContent = `รายงานผลการตอบกลับ: ${doc.title}`;
         document.getElementById('report-meta').textContent = `ประกาศเมื่อ: ${fmtDate(doc.createdAt)}${doc.deadline ? ' | กำหนดตอบ: ' + fmtDateTime(doc.deadline) : ''} | เปิดอ่าน: ${doc.viewCount || 0} คน`;
+
+        if (this.state.isLiteState) {
+          document.getElementById('report-table-wrap').innerHTML = '<div class="py-10 text-center text-stone-500 text-xs">กำลังโหลดรายละเอียดผู้ตอบกลับ...</div>';
+          await this.loadData(false, true).catch(() => {});
+        }
         this.renderReportBody();
         window.scrollTo({ top: 0, behavior: 'instant' });
       },
