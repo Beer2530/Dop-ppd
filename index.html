@@ -118,8 +118,12 @@
         </div>
       </div>
 
-      <!-- Top-Right Refresh Action -->
-      <div class="flex items-center gap-1.5 shrink-0">
+      <!-- Top-Right Refresh Action & Sync Indicator -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div id="sync-status-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-black/30 border border-white/10 text-stone-200">
+          <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="sync-status-text">พร้อมใช้งาน</span>
+        </div>
         <button id="btn-refresh" onclick="app.refreshData()" aria-label="รีเฟรชข้อมูล" class="w-9 h-9 sm:w-auto sm:h-9 sm:px-3.5 text-xs font-medium text-stone-100 hover:text-white bg-[#283419] hover:bg-[#344421] border border-white/15 rounded-full sm:rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50">
           <svg class="w-4 h-4 text-[#efd06b] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a9 9 0 1 1-2.64-6.36" />
@@ -181,7 +185,27 @@
 
       <!-- Reader Document Cards Container -->
       <div id="reader-docs-list" class="space-y-3 min-w-0">
-        <div class="bg-[#fafaf7] rounded-2xl p-8 text-center text-stone-500 text-sm border border-[#d4dac7] shadow-md">กำลังโหลดข้อมูลหนังสือเวียนทราบ...</div>
+        <div id="reader-initial-loading" class="space-y-3">
+          <div class="bg-[#fafaf7] rounded-2xl p-5 sm:p-6 border border-[#cfd6bf] shadow-md space-y-3 animate-pulse">
+            <div class="flex items-center justify-between gap-3">
+              <div class="h-4 bg-stone-200 rounded-md w-1/4"></div>
+              <div class="h-4 bg-stone-200 rounded-md w-24"></div>
+            </div>
+            <div class="h-5 bg-stone-300 rounded-md w-3/4"></div>
+            <div class="h-3.5 bg-stone-200 rounded-md w-1/2"></div>
+            <div class="pt-2 flex justify-between items-center">
+              <div class="h-9 bg-stone-200 rounded-xl w-32"></div>
+              <div class="h-9 bg-stone-200 rounded-xl w-24"></div>
+            </div>
+          </div>
+          <div class="bg-[#fafaf7] rounded-2xl p-4 text-center border border-[#cfd6bf] shadow-sm flex flex-col items-center justify-center gap-2">
+            <div class="flex items-center gap-2 text-stone-700 text-xs sm:text-sm font-semibold">
+              <span class="w-4 h-4 border-2 border-[#3a4a21] border-t-transparent rounded-full animate-spin"></span>
+              <span>กำลังดึงข้อมูลหนังสือเวียนทราบ...</span>
+            </div>
+            <p class="text-[11px] text-stone-500">เชื่อมต่อ Google Sheets & Drive ถาวร</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -434,9 +458,10 @@
           <input id="edit-deadline" type="datetime-local" class="w-full h-11 px-3 rounded-xl border border-stone-300 bg-white text-xs sm:text-sm" />
         </div>
         <div class="min-w-0">
-          <label class="block text-xs font-semibold text-stone-700 mb-1.5">เปลี่ยนไฟล์แนบใหม่ (เฉพาะไฟล์ PDF)</label>
+          <label class="block text-xs font-semibold text-stone-700 mb-1.5">จัดการไฟล์แนบ (เฉพาะไฟล์ PDF)</label>
+          <div id="edit-current-file" class="mb-2 flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200 min-w-0 overflow-hidden"></div>
           <input id="edit-file" type="file" accept=".pdf,application/pdf" onchange="app.handleEditFileChange(this)" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 bg-white text-xs text-stone-700 file:mr-2.5 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2e3b19] file:text-white cursor-pointer" />
-          <div id="edit-current-file" class="mt-2 flex items-center justify-between gap-2 text-[11px] text-stone-600 bg-white px-3 py-2 rounded-xl border border-stone-200 min-w-0 overflow-hidden"></div>
+          <div id="edit-new-file-info" class="hidden mt-2 flex items-center justify-between gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 font-medium min-w-0 overflow-hidden"></div>
           <div id="edit-upload-progress-wrap" class="hidden mt-2.5 space-y-1">
             <div class="flex justify-between text-[11px] font-semibold text-stone-700">
               <span id="edit-upload-progress-text">กำลังอัปโหลดไฟล์ใหม่ขึ้น Google Drive...</span>
@@ -559,6 +584,7 @@
       DEFAULT_DEADLINE_MS: 7 * 24 * 60 * 60 * 1000,
       STORAGE_MY_REPLIED_KEY: 'circular_sys_my_replied_v1',
       STORAGE_RESPONDER_KEY: 'circular_sys_responder_name',
+      STORAGE_STATE_CACHE_KEY: 'circular_sys_cached_state_v2',
       IDB_NAME: 'CircularPdfCacheV1',
       IDB_STORE: 'pdfs',
     };
@@ -575,6 +601,16 @@
 
     const isGasEmbedded = () =>
       typeof google !== 'undefined' && google.script && google.script.run;
+
+    // Helper timeout signal compatible with older/embedded browsers
+    function makeTimeoutSignal(ms) {
+      if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+        return AbortSignal.timeout(ms);
+      }
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), ms);
+      return controller.signal;
+    }
 
     // ==================== BACKEND BRIDGE (Google Sheets & Google Drive via GAS) ====================
     async function callBackend(action, payload = {}) {
@@ -599,28 +635,71 @@
         throw new Error('กรุณานำลิงก์ Web App URL ไปใส่ในโค้ดก่อนใช้งาน');
       }
 
-      // ใช้ text/plain เพื่อหลีกเลี่ยง CORS preflight (OPTIONS)
+      const parseGasResponse = async (response) => {
+        const rawText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          if (response.status === 401 || response.status === 403 || rawText.includes('ServiceLogin')) {
+            throw new Error(`Google Apps Script ปฏิเสธการเข้าถึง (HTTP ${response.status}) — กรุณาตั้งค่า Deploy > Who has access เป็น "Anyone / ทุกคน"`);
+          }
+          throw new Error(`เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (HTTP ${response.status})`);
+        }
+        if (!response.ok || (data && (data.error || data.success === false))) {
+          throw new Error((data && (data.error || data.message)) || `HTTP ${response.status}`);
+        }
+        return data;
+      };
+
+      // 1. Dual-route optimization for 'getState' (Try GET first for speed; fallback to POST)
+      if (action === 'getState') {
+        try {
+          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getState&_t=${Date.now()}`, {
+            method: 'GET',
+            signal: makeTimeoutSignal(8000),
+          });
+          return await parseGasResponse(getRes);
+        } catch (getErr) {
+          console.warn('GET getState fallback to POST:', getErr.message);
+          const postRes = await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getState' }),
+            signal: makeTimeoutSignal(15000),
+          });
+          return await parseGasResponse(postRes);
+        }
+      }
+
+      // 2. Dual-route optimization for 'getPdf' (Try POST first; fallback to GET)
+      if (action === 'getPdf') {
+        try {
+          const postRes = await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getPdf', fileId: payload.fileId }),
+            signal: makeTimeoutSignal(18000),
+          });
+          return await parseGasResponse(postRes);
+        } catch (postErr) {
+          console.warn('POST getPdf fallback to GET:', postErr.message);
+          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getPdf&fileId=${encodeURIComponent(payload.fileId)}`, {
+            method: 'GET',
+            signal: makeTimeoutSignal(20000),
+          });
+          return await parseGasResponse(getRes);
+        }
+      }
+
+      // 3. Standard POST with 30s timeout for mutations (saveDoc, uploadChunk, deleteDoc, etc.)
       const response = await fetch(GAS_WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action, ...payload })
+        body: JSON.stringify({ action, ...payload }),
+        signal: makeTimeoutSignal(35000),
       });
-
-      const rawText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        if (response.status === 401 || response.status === 403 || rawText.includes('ServiceLogin')) {
-          throw new Error(`Google Apps Script ปฏิเสธการเข้าถึง (HTTP ${response.status}) — กรุณาตั้งค่า Deploy > Who has access เป็น "Anyone / ทุกคน"`);
-        }
-        throw new Error(`เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (HTTP ${response.status})`);
-      }
-
-      if (!response.ok || (data && (data.error || data.success === false))) {
-        throw new Error((data && (data.error || data.message)) || `HTTP ${response.status}`);
-      }
-      return data;
+      return await parseGasResponse(response);
     }
 
     // ==================== INDEXEDDB CACHE FOR PDF FILES ====================
@@ -721,13 +800,19 @@
     async function uploadFileInChunks(docId, file, onProgress) {
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
-      const CHUNK_SIZE = isGasEmbedded() ? 1572864 : 3145728; // 3 MB ต่อรอบ (ลดจำนวนรอบลง 6 เท่า)
+      const CHUNK_SIZE = isGasEmbedded() ? 1572864 : 3145728; // 3 MB ต่อรอบ
       const totalChunks = Math.max(1, Math.ceil(bytes.length / CHUNK_SIZE));
       let completedCount = 0;
+
+      if (onProgress) onProgress(0, totalChunks, 5);
 
       const sendChunk = async (idx) => {
         const slice = bytes.subarray(idx * CHUNK_SIZE, Math.min((idx + 1) * CHUNK_SIZE, bytes.length));
         const chunkBase64 = uint8ToBase64Fast(slice);
+        
+        const approxPct = Math.min(95, Math.max(10, Math.round(((idx + 0.3) / totalChunks) * 100)));
+        if (onProgress) onProgress(idx, totalChunks, approxPct);
+
         const res = await callBackend('uploadChunk', {
           docId,
           index: idx,
@@ -737,23 +822,22 @@
           mimeType: file.type || 'application/pdf'
         });
         completedCount += 1;
-        if (onProgress) onProgress(completedCount, totalChunks);
+        const currentPct = Math.min(98, Math.round((completedCount / totalChunks) * 100));
+        if (onProgress) onProgress(completedCount, totalChunks, currentPct);
         return res;
       };
 
-      if (onProgress) onProgress(0, totalChunks);
-
-      // อัปโหลดชิ้นที่ 0 ถึง totalChunks-2 แบบขนาน (สูงสุดครั้งละ 3 ชิ้น) แล้วค่อยส่งชิ้นสุดท้ายเพื่อรวมไฟล์
       if (totalChunks > 1) {
         const preIndices = [];
         for (let i = 0; i < totalChunks - 1; i++) preIndices.push(i);
-        const CONCURRENCY = 3;
+        const CONCURRENCY = 2;
         for (let start = 0; start < preIndices.length; start += CONCURRENCY) {
           await Promise.all(preIndices.slice(start, start + CONCURRENCY).map(sendChunk));
         }
       }
 
       const lastRes = await sendChunk(totalChunks - 1);
+      if (onProgress) onProgress(totalChunks, totalChunks, 100);
       return { bytes, lastRes };
     }
 
@@ -809,6 +893,28 @@
       },
 
       init() {
+        // 1. Instant 0ms Cache Load: แสดงข้อมูลหนังสือเวียนทราบทันทีจากหน่วยความจำในเครื่อง
+        try {
+          const cachedStr = localStorage.getItem(CONFIG.STORAGE_STATE_CACHE_KEY);
+          if (cachedStr) {
+            const cached = JSON.parse(cachedStr);
+            if (cached && Array.isArray(cached.docs) && cached.docs.length > 0) {
+              this.state.docs = cached.docs;
+              this.state.replies = cached.replies || [];
+              this.state.hasLoadedOnce = true;
+              this.renderAll();
+              const badge = document.getElementById('sync-status-badge');
+              const dot = document.getElementById('sync-status-dot');
+              const text = document.getElementById('sync-status-text');
+              if (badge) badge.classList.remove('hidden');
+              if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+              if (text) text.textContent = `ข้อมูลแคช (${this.state.docs.length} เรื่อง)`;
+            }
+          }
+        } catch (e) {
+          console.warn('Cache load error:', e);
+        }
+
         document.getElementById('add-deadline').value = toDatetimeLocalValue(
           (() => {
             const d = new Date();
@@ -821,6 +927,7 @@
         // Pre-warm PDF.js Web Worker early so first PDF opens without worker boot lag
         setTimeout(() => getSharedPdfWorker(), 80);
 
+        // ดึงข้อมูลสดล่าสุดจาก Google Sheets ในพื้นหลัง
         this.loadData();
 
         setInterval(() => {
@@ -845,27 +952,61 @@
       },
 
       // -------- DATA LAYER (Google Apps Script -> Google Sheets & Drive) --------
-      async loadData() {
+      async loadData(isManual = false) {
         const btn = document.getElementById('btn-refresh');
+        const badge = document.getElementById('sync-status-badge');
+        const dot = document.getElementById('sync-status-dot');
+        const text = document.getElementById('sync-status-text');
+
         if (btn) btn.disabled = true;
+        if (badge) badge.classList.remove('hidden');
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        if (text) text.textContent = 'กำลังซิงค์...';
+
         try {
           const res = await callBackend('getState');
           if (res && res.docs) {
             this.state.docs = res.docs;
             this.state.replies = res.replies || [];
             this.state.hasLoadedOnce = true;
+
+            // บันทึกแคชลง LocalStorage เพื่อให้เปิดหน้าเว็บได้ทันทีในครั้งถัดไป
+            try {
+              localStorage.setItem(CONFIG.STORAGE_STATE_CACHE_KEY, JSON.stringify({
+                docs: res.docs,
+                replies: res.replies || [],
+                timestamp: Date.now()
+              }));
+            } catch (err) {}
+
             this.renderAll();
             this.prefetchRecentPdfs();
+
+            if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+            if (text) text.textContent = `เชื่อมต่อแล้ว (${this.state.docs.length} เรื่อง)`;
+            if (isManual) {
+              this.showToast(`รีเฟรชข้อมูลเรียบร้อย (พบ ${this.state.docs.length} เรื่อง)`, 'success');
+            }
           }
         } catch (err) {
-          console.error(err);
-          this.showToast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + err.message, 'error');
-          if (!this.state.hasLoadedOnce) {
+          console.error('loadData error:', err);
+          if (this.state.hasLoadedOnce) {
+            // หากมีแคชแสดงอยู่แล้ว ไม่ต้องลบหน้าจอ ให้แสดงข้อความเตือนนุ่มนวล
+            if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+            if (text) text.textContent = `ข้อมูลแคช (${this.state.docs.length} เรื่อง)`;
+            if (isManual) {
+              this.showToast('การเชื่อมต่อไม่เสถียร แสดงข้อมูลล่าสุดในเครื่อง: ' + err.message, 'warning');
+            }
+          } else {
+            // หากไม่มีแคชและโหลดไม่สำเร็จ ให้แสดงหน้าต่างลองใหม่
+            if (dot) dot.className = 'w-2 h-2 rounded-full bg-red-500';
+            if (text) text.textContent = 'เชื่อมต่อไม่สำเร็จ';
+            this.showToast('ไม่สามารถเชื่อมต่อฐานข้อมูลได้: ' + err.message, 'error');
             document.getElementById('reader-docs-list').innerHTML = `
               <div class="bg-white/95 rounded-2xl p-6 text-center space-y-3 border border-red-200 shadow-md">
                 <p class="text-sm font-bold text-red-700">ไม่สามารถเชื่อมต่อฐานข้อมูล Google Sheets / Drive ได้</p>
                 <p class="text-xs text-stone-600">${escHtml(err.message)}</p>
-                <button onclick="app.refreshData()" class="px-4 py-2 text-xs font-semibold bg-[#46562a] hover:bg-[#38461f] text-white rounded-xl">
+                <button onclick="app.refreshData()" class="px-4 py-2 text-xs font-semibold bg-[#46562a] hover:bg-[#38461f] text-white rounded-xl shadow-md">
                   🔄 ลองเชื่อมต่อใหม่
                 </button>
               </div>`;
@@ -876,10 +1017,7 @@
       },
 
       async refreshData() {
-        await this.loadData();
-        if (this.state.hasLoadedOnce) {
-          this.showToast('รีเฟรชข้อมูลเรียบร้อย', 'info');
-        }
+        await this.loadData(true);
       },
 
       // -------- NAVIGATION --------
@@ -1248,12 +1386,13 @@
             const progressText = document.getElementById('upload-progress-text');
             if (progWrap) progWrap.classList.remove('hidden');
 
-            const { bytes, lastRes } = await uploadFileInChunks(docId, file, (curr, total) => {
-              const pct = total > 0 ? Math.min(100, Math.round((curr / total) * 100)) : 0;
-              if (progressBar) progressBar.style.width = pct + '%';
-              if (progressPct) progressPct.textContent = pct + '%';
+            const { bytes, lastRes } = await uploadFileInChunks(docId, file, (curr, total, pct) => {
+              const displayPct = pct != null ? pct : (total > 0 ? Math.round((curr / total) * 100) : 0);
+              if (progressBar) progressBar.style.width = displayPct + '%';
+              if (progressPct) progressPct.textContent = displayPct + '%';
               if (progressText) progressText.textContent = `กำลังอัปโหลดไฟล์ขึ้น Google Drive (${curr}/${total} ชิ้น)...`;
-              this.showAdminMsg(`กำลังอัปโหลดไฟล์แนบขึ้น Google Drive (${curr}/${total} — ${pct}%)...`, 'info');
+              btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span> กำลังอัปโหลด (${displayPct}%)...`;
+              this.showAdminMsg(`กำลังอัปโหลดไฟล์แนบขึ้น Google Drive (${curr}/${total} — ${displayPct}%)...`, 'info');
             });
             pdfMemCache.set(docId, bytes);
             await pdfIdb.save(docId, bytes).catch(() => {});
@@ -1286,6 +1425,7 @@
           this.showAdminMsg(err.message || 'เกิดข้อผิดพลาดในการบันทึก', 'err');
           this.showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
         } finally {
+          btn.innerHTML = '<span>เผยแพร่หนังสือเวียนทราบ</span>';
           btn.disabled = false;
         }
       },
@@ -1488,7 +1628,18 @@
         document.getElementById('edit-noreply').checked = Boolean(doc.noReply);
         document.getElementById('edit-status').value = doc.status || 'open';
         document.getElementById('edit-deadline').value = toDatetimeLocalValue(doc.deadline);
-        document.getElementById('edit-file').value = '';
+        
+        const fileInput = document.getElementById('edit-file');
+        if (fileInput) fileInput.value = '';
+        const newBox = document.getElementById('edit-new-file-info');
+        if (newBox) newBox.classList.add('hidden');
+        const progWrap = document.getElementById('edit-upload-progress-wrap');
+        if (progWrap) {
+          progWrap.classList.add('hidden');
+          const bar = document.getElementById('edit-upload-progress-bar');
+          if (bar) bar.style.width = '0%';
+        }
+
         this.toggleEditDeadlineField();
         this.renderEditCurrentFileBox(doc);
         document.getElementById('edit-modal').classList.remove('hidden');
@@ -1497,12 +1648,13 @@
       renderEditCurrentFileBox(doc) {
         const box = document.getElementById('edit-current-file');
         const hasFile = !this.state.editRemoveFile && Boolean(doc.driveFileId || doc.fileName);
+        const sizeMb = doc.fileSize ? ` (${(Number(doc.fileSize) / (1024 * 1024)).toFixed(2)} MB)` : '';
         box.innerHTML = `<span class="truncate">ไฟล์ปัจจุบัน: <strong>${
           this.state.editRemoveFile
-            ? 'ลบไฟล์แนบแล้ว (กดบันทึกเพื่อยืนยัน)'
+            ? '<span class="text-red-600">ลบไฟล์แนบแล้ว (กดบันทึกเพื่อยืนยัน)</span>'
             : hasFile
-            ? escHtml(doc.fileName || 'มีไฟล์แนบใน Google Drive') + (!doc.driveFileId ? ' (ยังไม่พบใน Drive)' : '')
-            : 'ไม่มีไฟล์แนบ'
+            ? escHtml(doc.fileName || 'มีไฟล์แนบใน Google Drive') + sizeMb + (!doc.driveFileId ? ' <span class="text-amber-700 font-normal">(ยังไม่พบใน Drive)</span>' : '')
+            : '<span class="text-stone-400 font-normal">ยังไม่มีไฟล์แนบ (สามารถเลือกแนบไฟล์ PDF ใหม่ด้านล่างได้)</span>'
         }</strong></span>
         ${hasFile ? `<button type="button" onclick="app.markEditRemoveFile()" class="px-2.5 py-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg font-semibold shrink-0">🗑 ลบไฟล์แนบ</button>` : ''}`;
       },
@@ -1521,14 +1673,41 @@
       handleEditFileChange(input) {
         const f = input.files && input.files[0];
         const err = document.getElementById('edit-error');
+        const newBox = document.getElementById('edit-new-file-info');
         err.classList.add('hidden');
+
         if (f && f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
           input.value = '';
+          if (newBox) newBox.classList.add('hidden');
           err.textContent = 'อนุญาตให้แนบได้เฉพาะไฟล์ PDF (.pdf) เท่านั้น';
           err.classList.remove('hidden');
           return;
         }
-        if (f) this.state.editRemoveFile = false;
+
+        if (f) {
+          this.state.editRemoveFile = false;
+          const mb = (f.size / (1024 * 1024)).toFixed(2);
+          if (newBox) {
+            newBox.innerHTML = `
+              <span class="truncate">📎 ไฟล์ใหม่ที่เลือก: <strong>${escHtml(f.name)}</strong> (${mb} MB)</span>
+              <button type="button" onclick="app.cancelEditNewFile()" class="px-2 py-0.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold rounded-md shrink-0">✕ ยกเลิกไฟล์นี้</button>
+            `;
+            newBox.classList.remove('hidden');
+          }
+        } else {
+          if (newBox) newBox.classList.add('hidden');
+        }
+        const doc = this.state.docs.find((d) => d.id === this.state.editDocId);
+        if (doc) this.renderEditCurrentFileBox(doc);
+      },
+
+      cancelEditNewFile() {
+        const input = document.getElementById('edit-file');
+        if (input) input.value = '';
+        const newBox = document.getElementById('edit-new-file-info');
+        if (newBox) newBox.classList.add('hidden');
+        const doc = this.state.docs.find((d) => d.id === this.state.editDocId);
+        if (doc) this.renderEditCurrentFileBox(doc);
       },
 
       closeEditModal() {
@@ -1551,6 +1730,7 @@
 
         const btn = document.getElementById('edit-submit-btn');
         btn.disabled = true;
+        btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span> กำลังบันทึก...`;
         errEl.classList.add('hidden');
 
         try {
@@ -1566,7 +1746,7 @@
             await pdfIdb.remove(doc.id).catch(() => {});
           }
 
-          const updatedDoc = {
+          let updatedDoc = {
             ...doc,
             title,
             description: document.getElementById('edit-desc').value.trim(),
@@ -1580,8 +1760,6 @@
             fileSize: this.state.editRemoveFile ? 0 : (newFile ? newFile.size : (doc.fileSize || 0)),
           };
 
-          await callBackend('saveDoc', { doc: updatedDoc });
-
           if (newFile) {
             invalidatePdfCache(doc.id);
             const progWrap = document.getElementById('edit-upload-progress-wrap');
@@ -1590,20 +1768,34 @@
             const progressText = document.getElementById('edit-upload-progress-text');
             if (progWrap) progWrap.classList.remove('hidden');
 
-            const { bytes, lastRes } = await uploadFileInChunks(doc.id, newFile, (curr, total) => {
-              const pct = total > 0 ? Math.min(100, Math.round((curr / total) * 100)) : 0;
-              if (progressBar) progressBar.style.width = pct + '%';
-              if (progressPct) progressPct.textContent = pct + '%';
+            const { bytes, lastRes } = await uploadFileInChunks(doc.id, newFile, (curr, total, pct) => {
+              const displayPct = pct != null ? pct : (total > 0 ? Math.round((curr / total) * 100) : 0);
+              if (progressBar) progressBar.style.width = displayPct + '%';
+              if (progressPct) progressPct.textContent = displayPct + '%';
               if (progressText) progressText.textContent = `กำลังอัปโหลดไฟล์ใหม่ขึ้น Google Drive (${curr}/${total} ชิ้น)...`;
-              this.showToast(`กำลังอัปโหลดไฟล์ใหม่ (${curr}/${total} — ${pct}%)...`, 'info');
+              btn.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span> กำลังอัปโหลด (${displayPct}%)...`;
+              this.showToast(`กำลังอัปโหลดไฟล์ใหม่ (${curr}/${total} — ${displayPct}%)...`, 'info');
             });
             pdfMemCache.set(doc.id, bytes);
             await pdfIdb.save(doc.id, bytes).catch(() => {});
             if (progWrap) progWrap.classList.add('hidden');
-            if (lastRes && lastRes.completed && !lastRes.driveFileId) {
+            if (lastRes && lastRes.completed && lastRes.driveFileId) {
+              updatedDoc.driveFileId = lastRes.driveFileId;
+              updatedDoc.fileName = newFile.name;
+              updatedDoc.fileSize = newFile.size;
+            } else if (lastRes && lastRes.completed && !lastRes.driveFileId) {
               throw new Error('อัปโหลดไฟล์เสร็จสิ้นแต่ไม่ได้รับ File ID จาก Google Drive');
             }
           }
+
+          await callBackend('saveDoc', { doc: updatedDoc });
+
+          // อัปเดตในหน่วยความจำทันที
+          const localIdx = this.state.docs.findIndex((d) => d.id === doc.id);
+          if (localIdx >= 0) {
+            this.state.docs[localIdx] = updatedDoc;
+          }
+          this.renderAll();
 
           this.closeEditModal();
           const progWrap = document.getElementById('edit-upload-progress-wrap');
@@ -1614,6 +1806,7 @@
           errEl.textContent = 'บันทึกการแก้ไขไม่สำเร็จ: ' + err.message;
           errEl.classList.remove('hidden');
         } finally {
+          btn.innerHTML = '<span>บันทึกการแก้ไข</span>';
           btn.disabled = false;
         }
       },
@@ -1744,16 +1937,19 @@
           }
           const bytes = await this.getPdfBytes(doc);
           if (!bytes || bytes.length === 0) {
-            throw new Error('ไม่พบข้อมูลไฟล์ PDF');
+            throw new Error('ไม่พบข้อมูลไฟล์ PDF หรือไฟล์ยังไม่ถูกบันทึกสมบูรณ์');
           }
           this.state.viewingPdfBytes = bytes;
           await this.renderPdfBytes(bytes, docId);
         } catch (err) {
             container.innerHTML = `
               <div class="my-auto text-center text-stone-300 p-6 bg-[#1b1d1f] rounded-2xl border border-white/10 max-w-md space-y-3">
-                <p class="text-sm text-red-400 font-semibold">ไม่พบไฟล์แนบใน Google Drive</p>
-                <p class="text-xs text-stone-400">การอัปโหลดไฟล์ก่อนหน้านี้อาจยังไม่สมบูรณ์ หรือไฟล์ยังไม่ถูกบันทึกใน Google Drive กรุณากดแก้ไข (✏️) ในหน้าผู้ดูแลระบบเพื่ออัปโหลดไฟล์ใหม่อีกครั้ง</p>
-                <button onclick="app.closeSubView()" class="px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 rounded-xl text-white">กลับหน้ารายการ</button>
+                <p class="text-sm text-red-400 font-semibold">ไม่สามารถเปิดเอกสารได้</p>
+                <p class="text-xs text-stone-400 leading-relaxed">${escHtml(err.message || 'ไม่สามารถดึงไฟล์ PDF ได้')}</p>
+                <div class="pt-2 flex items-center justify-center gap-2">
+                  <button onclick="app.openPdfViewer('${escHtml(docId)}')" class="px-4 py-2 text-xs font-semibold bg-[#46562a] hover:bg-[#38461f] rounded-xl text-white shadow-md">🔄 ลองเปิดใหม่</button>
+                  <button onclick="app.closeSubView()" class="px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 rounded-xl text-white">ปิด</button>
+                </div>
               </div>`;
         }
       },
