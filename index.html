@@ -10,10 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Preconnect & Preload for faster GAS & PDF.js startup -->
+  <!-- Preconnect & Preload for faster GAS, Drive & PDF.js startup -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
   <link rel="preconnect" href="https://script.google.com" crossorigin />
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
+  <link rel="preconnect" href="https://drive.google.com" crossorigin />
+  <link rel="preconnect" href="https://drive.usercontent.google.com" crossorigin />
+  <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin />
   <link rel="preload" as="image" href="/assets/aistudio/logo-1_511dba15.png" />
   <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin />
 
@@ -367,22 +370,22 @@
 
   <!-- ==================== IN-PAGE PDF VIEWER OVERLAY ==================== -->
   <div id="pdf-viewer-overlay" class="hidden fixed inset-0 z-50 bg-[#1c1e21] flex flex-col w-full max-w-full h-[100dvh] overflow-hidden">
-    <div class="min-h-[48px] bg-[#141a0d] text-white px-2.5 sm:px-4 py-1.5 flex items-center justify-between gap-2 border-b border-[#c9a227]/35 shrink-0 min-w-0">
+    <div class="min-h-[44px] bg-[#141a0d] text-white px-2.5 sm:px-4 py-1 flex items-center justify-between gap-2 border-b border-[#c9a227]/35 shrink-0 min-w-0">
       <div class="flex items-center gap-2 min-w-0 flex-1">
-        <button onclick="app.closeSubView()" class="min-h-[36px] px-3 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg shrink-0">✕ ปิด</button>
+        <button onclick="app.closeSubView()" class="min-h-[34px] px-2.5 sm:px-3 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg shrink-0">✕ ปิด</button>
         <span id="pdf-viewer-title" class="text-xs sm:text-sm text-stone-200 truncate font-medium"></span>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
         <span id="pdf-page-count" class="hidden sm:inline-block text-[11px] text-stone-300 bg-white/10 px-2 py-1 rounded font-mono-num"></span>
-        <div class="flex items-center bg-white/10 rounded-lg p-0.5 text-xs">
-          <button onclick="app.zoomPdf(-0.2)" class="min-w-[32px] min-h-[32px] hover:bg-white/15 rounded text-stone-200">－</button>
+        <div id="pdf-zoom-controls" class="flex items-center bg-white/10 rounded-lg p-0.5 text-xs">
+          <button onclick="app.zoomPdf(-0.2)" class="min-w-[30px] min-h-[30px] hover:bg-white/15 rounded text-stone-200">－</button>
           <span id="pdf-zoom-label" class="text-[11px] px-1.5 font-mono-num text-[#efd06b]">100%</span>
-          <button onclick="app.zoomPdf(0.2)" class="min-w-[32px] min-h-[32px] hover:bg-white/15 rounded text-stone-200">＋</button>
+          <button onclick="app.zoomPdf(0.2)" class="min-w-[30px] min-h-[30px] hover:bg-white/15 rounded text-stone-200">＋</button>
         </div>
-        <button onclick="app.downloadViewingPdf()" class="min-h-[36px] px-2.5 sm:px-3 py-1 text-xs font-semibold text-[#141a0b] bg-[#c9a227] hover:bg-[#deb73b] rounded-lg">ดาวน์โหลด</button>
+        <button onclick="app.downloadViewingPdf()" class="min-h-[34px] px-2.5 sm:px-3 py-1 text-xs font-semibold text-[#141a0b] bg-[#c9a227] hover:bg-[#deb73b] rounded-lg">ดาวน์โหลด</button>
       </div>
     </div>
-    <div id="pdf-pages-container" class="flex-1 overflow-auto flex flex-col items-center py-3 px-2.5 gap-3"></div>
+    <div id="pdf-pages-container" class="flex-1 overflow-auto flex flex-col items-start px-0 py-1 sm:py-3 sm:px-2.5 gap-1.5 sm:gap-3"></div>
   </div>
 
   <!-- ==================== REPLY MODAL ==================== -->
@@ -663,9 +666,16 @@
         }
       }
 
-      // 2. Dual-route optimization for 'getPdf' (Try POST first; fallback to GET)
+      // 2. Dual-route optimization for 'getPdf' (GET first to bypass GAS LockService & speed up 302; fallback to POST)
       if (action === 'getPdf') {
         try {
+          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getPdf&fileId=${encodeURIComponent(payload.fileId)}`, {
+            method: 'GET',
+            signal: makeTimeoutSignal(25000),
+          });
+          return await parseGasResponse(getRes);
+        } catch (getErr) {
+          console.warn('GET getPdf fallback to POST:', getErr.message);
           const postRes = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -673,13 +683,6 @@
             signal: makeTimeoutSignal(30000),
           });
           return await parseGasResponse(postRes);
-        } catch (postErr) {
-          console.warn('POST getPdf fallback to GET:', postErr.message);
-          const getRes = await fetch(`${GAS_WEB_APP_URL}?action=getPdf&fileId=${encodeURIComponent(payload.fileId)}`, {
-            method: 'GET',
-            signal: makeTimeoutSignal(35000),
-          });
-          return await parseGasResponse(getRes);
         }
       }
 
@@ -698,14 +701,25 @@
     const pdfIdb = {
       open() {
         return new Promise((resolve, reject) => {
-          const req = indexedDB.open(CONFIG.IDB_NAME, 1);
-          req.onupgradeneeded = () => {
-            if (!req.result.objectStoreNames.contains(CONFIG.IDB_STORE)) {
-              req.result.createObjectStore(CONFIG.IDB_STORE);
-            }
-          };
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
+          if (typeof indexedDB === 'undefined') {
+            reject(new Error('IndexedDB unavailable'));
+            return;
+          }
+          const timer = setTimeout(() => reject(new Error('IndexedDB open timeout')), 1200);
+          try {
+            const req = indexedDB.open(CONFIG.IDB_NAME, 1);
+            req.onupgradeneeded = () => {
+              if (!req.result.objectStoreNames.contains(CONFIG.IDB_STORE)) {
+                req.result.createObjectStore(CONFIG.IDB_STORE);
+              }
+            };
+            req.onsuccess = () => { clearTimeout(timer); resolve(req.result); };
+            req.onerror = () => { clearTimeout(timer); reject(req.error); };
+            req.onblocked = () => { clearTimeout(timer); reject(new Error('IndexedDB blocked')); };
+          } catch (err) {
+            clearTimeout(timer);
+            reject(err);
+          }
         });
       },
       async save(docId, uint8Bytes) {
@@ -720,10 +734,11 @@
       async get(docId) {
         const db = await this.open();
         return new Promise((resolve, reject) => {
+          const timer = setTimeout(() => resolve(null), 1200);
           const tx = db.transaction(CONFIG.IDB_STORE, 'readonly');
           const req = tx.objectStore(CONFIG.IDB_STORE).get(docId);
-          req.onsuccess = () => resolve(req.result || null);
-          req.onerror = () => reject(req.error);
+          req.onsuccess = () => { clearTimeout(timer); resolve(req.result || null); };
+          req.onerror = () => { clearTimeout(timer); reject(req.error); };
         });
       },
       async remove(docId) {
@@ -777,16 +792,28 @@
     }
 
     async function base64ToUint8Fast(base64) {
-      const clean = base64.includes(',') ? base64.split(',')[1] : base64;
-      try {
-        const res = await fetch('data:application/pdf;base64,' + clean);
-        return new Uint8Array(await res.arrayBuffer());
-      } catch {
-        const binary = atob(clean);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        return bytes;
+      const clean = (base64.includes(',') ? base64.split(',')[1] : base64).replace(/\s+/g, '');
+      const len = clean.length;
+      if (!len) return new Uint8Array(0);
+      let pad = 0;
+      if (clean[len - 1] === '=') pad++;
+      if (len > 1 && clean[len - 2] === '=') pad++;
+      const totalBytes = ((len * 3) >> 2) - pad;
+      const bytes = new Uint8Array(totalBytes);
+      // แปลงทีละช่วง 262,144 ตัวอักษร (หาร 4 ลงตัว) เพื่อไม่ให้ค้าง iOS WKWebView และไม่ใช้ fetch('data:...') ที่กินแรม 2 เท่า
+      const CHUNK_CHARS = 262144;
+      let offset = 0;
+      for (let start = 0; start < len; start += CHUNK_CHARS) {
+        const end = Math.min(len, start + CHUNK_CHARS);
+        const binary = atob(clean.slice(start, end));
+        for (let i = 0; i < binary.length; i++) {
+          bytes[offset++] = binary.charCodeAt(i);
+        }
+        if (end < len) {
+          await new Promise((r) => setTimeout(r, 0));
+        }
       }
+      return bytes;
     }
 
     async function uploadFileInChunks(docId, file, onProgress) {
@@ -844,6 +871,27 @@
     const pdfProxyCache = new Map();  // docId -> PDFDocumentProxy (skip re-parsing)
     const pdfInFlight = new Map();    // docId -> Promise<Uint8Array|null> (dedup concurrent fetches)
     let sharedPdfWorker = null;
+
+    function isMobileReaderDevice() {
+      const ua = navigator.userAgent || '';
+      return window.innerWidth <= 820 || /Mobi|Android|iPhone|iPad|iPod|Line|FBAV|FBAN|Instagram/i.test(ua);
+    }
+
+    async function ensurePdfJsReady(timeoutMs = 8000) {
+      if (window.pdfjsLib) {
+        ensurePdfWorkerSrc();
+        return true;
+      }
+      const start = Date.now();
+      while (!window.pdfjsLib && Date.now() - start < timeoutMs) {
+        await new Promise((r) => setTimeout(r, 80));
+      }
+      if (window.pdfjsLib) {
+        ensurePdfWorkerSrc();
+        return true;
+      }
+      return false;
+    }
 
     function getSharedPdfWorker() {
       ensurePdfWorkerSrc();
@@ -1100,7 +1148,10 @@
           this.state.pdfObserver = null;
         }
         this.state.pdfRenderToken += 1;
-        document.getElementById('pdf-viewer-overlay').classList.add('hidden');
+        const pdfOverlay = document.getElementById('pdf-viewer-overlay');
+        if (pdfOverlay) pdfOverlay.classList.add('hidden');
+        const pdfContainer = document.getElementById('pdf-pages-container');
+        if (pdfContainer) pdfContainer.innerHTML = '';
         document.getElementById('view-report').classList.add('hidden');
         this.state.viewingPdfDoc = null;
         this.state.reportDocId = null;
@@ -2111,8 +2162,66 @@
         document.getElementById('success-modal').classList.add('hidden');
       },
 
-      // -------- PDF VIEWER & DOWNLOAD (PREFETCHED + CACHED + PROGRESSIVE) --------
-      async getPdfBytes(doc) {
+      // -------- PDF VIEWER & DOWNLOAD (DIRECT BINARY DRIVE + CACHED + FULL-SCREEN) --------
+      isPdfMagicBytes(bytes) {
+        return (
+          bytes instanceof Uint8Array &&
+          bytes.length >= 5 &&
+          bytes[0] === 0x25 &&
+          bytes[1] === 0x50 &&
+          bytes[2] === 0x44 &&
+          bytes[3] === 0x46 &&
+          bytes[4] === 0x2d
+        );
+      },
+
+      async fetchDirectDrivePdfBytes(fileId, expectedSize = 0, onProgress = null) {
+        const url = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(fileId)}&export=view&confirm=t`;
+        const res = await fetch(url, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+          signal: makeTimeoutSignal(22000),
+        });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const headerLen = Number(res.headers.get('content-length')) || Number(expectedSize) || 0;
+        let bytes = null;
+
+        if (res.body && typeof res.body.getReader === 'function') {
+          const reader = res.body.getReader();
+          const chunks = [];
+          let received = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value && value.length > 0) {
+              chunks.push(value);
+              received += value.length;
+              if (onProgress && headerLen > 0) {
+                onProgress(Math.min(99, Math.round((received / headerLen) * 100)));
+              }
+            }
+          }
+          bytes = new Uint8Array(received);
+          let offset = 0;
+          for (const chunk of chunks) {
+            bytes.set(chunk, offset);
+            offset += chunk.length;
+          }
+        } else {
+          bytes = new Uint8Array(await res.arrayBuffer());
+        }
+
+        if (!this.isPdfMagicBytes(bytes)) {
+          throw new Error('NOT_RAW_PDF');
+        }
+        return bytes;
+      },
+
+      async getPdfBytes(doc, onProgress = null) {
         if (!doc) return null;
         if (pdfMemCache.has(doc.id)) return pdfMemCache.get(doc.id);
 
@@ -2129,6 +2238,19 @@
         }
 
         const fetchPromise = (async () => {
+          // 1. ดึงไบนารี PDF ตรงจาก Google Drive CDN (~5x เร็วกว่า GAS Base64 และไม่ติด LockService)
+          if (!doc.fileSize || Number(doc.fileSize) <= 26 * 1024 * 1024) {
+            try {
+              const directBytes = await this.fetchDirectDrivePdfBytes(doc.driveFileId, doc.fileSize, onProgress);
+              pdfMemCache.set(doc.id, directBytes);
+              pdfIdb.save(doc.id, directBytes).catch(() => {});
+              return directBytes;
+            } catch (directErr) {
+              console.warn('Direct Drive PDF fetch fallback to GAS:', directErr && directErr.message);
+            }
+          }
+
+          // 2. Fallback: ดึงผ่าน Google Apps Script
           const res = await callBackend('getPdf', { fileId: doc.driveFileId });
           if (res && res.tooLargeForBase64) {
             return { tooLargeForBase64: true };
@@ -2137,7 +2259,7 @@
           if (b64) {
             const decoded = await base64ToUint8Fast(b64);
             pdfMemCache.set(doc.id, decoded);
-            await pdfIdb.save(doc.id, decoded).catch(() => {});
+            pdfIdb.save(doc.id, decoded).catch(() => {});
             return decoded;
           }
           return null;
@@ -2154,11 +2276,12 @@
       async prefetchPdf(docId) {
         const doc = this.state.docs.find((d) => d.id === docId);
         if (!doc || !doc.driveFileId) return;
-        if (doc.fileSize && Number(doc.fileSize) > 20 * 1024 * 1024) return;
+        const maxSize = isMobileReaderDevice() ? 8 * 1024 * 1024 : 15 * 1024 * 1024;
+        if (doc.fileSize && Number(doc.fileSize) > maxSize) return;
         if (pdfProxyCache.has(doc.id)) return;
         try {
           const bytes = await this.getPdfBytes(doc);
-          if (bytes instanceof Uint8Array && bytes.length > 0 && window.pdfjsLib && !pdfProxyCache.has(doc.id)) {
+          if (bytes instanceof Uint8Array && bytes.length > 0 && await ensurePdfJsReady(3000) && !pdfProxyCache.has(doc.id)) {
             const task = pdfjsLib.getDocument({
               data: bytes.slice(0),
               worker: getSharedPdfWorker(),
@@ -2181,9 +2304,10 @@
 
         const runPrefetch = async () => {
           try {
+            const maxPrefetchSize = isMobileReaderDevice() ? 6 * 1024 * 1024 : 10 * 1024 * 1024;
             const candidates = this.state.docs
-              .filter((d) => d.driveFileId && (!d.fileSize || Number(d.fileSize) <= 5 * 1024 * 1024))
-              .slice(0, 2);
+              .filter((d) => d.driveFileId && (!d.fileSize || Number(d.fileSize) <= maxPrefetchSize))
+              .slice(0, isMobileReaderDevice() ? 2 : 3);
             for (const d of candidates) {
               await this.prefetchPdf(d.id);
             }
@@ -2193,15 +2317,61 @@
         };
 
         if (typeof requestIdleCallback === 'function') {
-          requestIdleCallback(() => runPrefetch(), { timeout: 2500 });
+          requestIdleCallback(() => runPrefetch(), { timeout: 1800 });
         } else {
-          setTimeout(runPrefetch, 1500);
+          setTimeout(runPrefetch, 900);
         }
+      },
+
+      renderDrivePreviewViewer(doc) {
+        const container = document.getElementById('pdf-pages-container');
+        const zoomControls = document.getElementById('pdf-zoom-controls');
+        const pageCountEl = document.getElementById('pdf-page-count');
+        if (zoomControls) zoomControls.classList.add('hidden');
+
+        const sizeMb = doc.fileSize ? (Number(doc.fileSize) / 1048576).toFixed(1) : '';
+        if (pageCountEl) {
+          if (sizeMb) {
+            pageCountEl.textContent = `${sizeMb} MB`;
+            pageCountEl.classList.remove('hidden');
+          } else {
+            pageCountEl.classList.add('hidden');
+          }
+        }
+
+        container.className = 'flex-1 relative overflow-hidden bg-[#1c1e21] w-full flex flex-col';
+        const previewUrl = `https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/preview`;
+
+        container.innerHTML = `
+          <div id="drive-preview-loader" class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 bg-[#1c1e21]/90 transition-opacity duration-200">
+            <div class="w-8 h-8 border-2 border-[#c9a227] border-t-transparent rounded-full animate-spin"></div>
+            <div class="text-amber-300 text-xs font-medium">กำลังเปิดเอกสาร PDF${sizeMb ? ` (${sizeMb} MB)` : ''}...</div>
+          </div>
+          <iframe
+            id="drive-preview-iframe"
+            src="${previewUrl}"
+            title="${escHtml(doc.title)}"
+            class="w-full h-full flex-1 border-0 bg-white"
+            style="min-height:0;"
+            allow="autoplay"
+          ></iframe>`;
+
+        const loader = document.getElementById('drive-preview-loader');
+        const iframe = document.getElementById('drive-preview-iframe');
+        const hideLoader = () => {
+          if (loader) {
+            loader.classList.add('opacity-0');
+            setTimeout(() => loader.classList.add('hidden'), 200);
+          }
+        };
+        if (iframe) iframe.addEventListener('load', hideLoader, { once: true });
+        setTimeout(hideLoader, 900);
       },
 
       async openPdfViewer(docId) {
         const doc = this.state.docs.find((d) => d.id === docId);
         if (!doc || !doc.driveFileId) return;
+        const viewerToken = ++this.state.pdfRenderToken;
         this.state.savedScrollY = window.scrollY;
         this.state.activeDocId = docId;
         this.state.viewingPdfDoc = doc;
@@ -2217,9 +2387,11 @@
         document.getElementById('pdf-zoom-label').textContent = '100%';
         document.getElementById('pdf-page-count').classList.add('hidden');
         const container = document.getElementById('pdf-pages-container');
+        const zoomControls = document.getElementById('pdf-zoom-controls');
+        if (zoomControls) zoomControls.classList.remove('hidden');
         document.getElementById('pdf-viewer-overlay').classList.remove('hidden');
 
-        // Fast Path: หากเอกสารนี้ถูก Prefetch/Parse ไว้ในหน่วยความจำแล้ว เปิดหน้าแรกทันที (< 10ms)
+        // Fast Path 1: หากเอกสารนี้ถูก Prefetch/Parse ไว้ในหน่วยความจำแล้ว เปิดเต็มจอทันที (< 10ms)
         if (pdfProxyCache.has(docId)) {
           try {
             const cachedPdf = pdfProxyCache.get(docId);
@@ -2234,61 +2406,104 @@
           }
         }
 
-        container.innerHTML = `
-          <div class="my-auto flex flex-col items-center gap-3 text-center px-4">
-            <div class="w-8 h-8 border-2 border-[#c9a227] border-t-transparent rounded-full animate-spin"></div>
-            <div class="text-amber-300 text-xs sm:text-sm font-medium">กำลังเปิดเอกสาร PDF...</div>
-          </div>`;
+        // Fast Path 2: เช็กหน่วยความจำ / IndexedDB ในเครื่องก่อน (0ms - 30ms)
+        let localBytes = pdfMemCache.get(docId) || null;
+        if (!localBytes) {
+          localBytes = await pdfIdb.get(docId).catch(() => null);
+          if (localBytes && localBytes.length > 0) {
+            pdfMemCache.set(docId, localBytes);
+          }
+        }
+        if (viewerToken !== this.state.pdfRenderToken) return;
+
+        // กรณีไฟล์ใหญ่มาก (> 26 MB) เปิดผ่าน Google Drive Preview เต็มจอโดยตรง
+        if (!localBytes && Number(doc.fileSize || 0) > 26 * 1024 * 1024) {
+          this.renderDrivePreviewViewer(doc);
+          return;
+        }
+
+        container.className = 'flex-1 overflow-auto flex flex-col items-start px-0 py-1 sm:py-3 sm:px-2.5 gap-1.5 sm:gap-3';
+        if (!localBytes) {
+          const sizeLabel = doc.fileSize ? ` (${(Number(doc.fileSize) / 1048576).toFixed(1)} MB)` : '';
+          container.innerHTML = `
+            <div class="my-auto mx-auto flex flex-col items-center gap-3 text-center px-4 max-w-xs">
+              <div class="w-8 h-8 border-2 border-[#c9a227] border-t-transparent rounded-full animate-spin"></div>
+              <div id="pdf-loading-label" class="text-amber-300 text-xs sm:text-sm font-medium">กำลังเปิดเอกสาร PDF${sizeLabel}...</div>
+            </div>`;
+        }
 
         try {
           if (doc.mimeType && !doc.mimeType.includes('pdf')) {
             throw new Error('ไม่ใช่ไฟล์ PDF');
           }
-          const result = await this.getPdfBytes(doc);
+          const result = localBytes || await this.getPdfBytes(doc, (pct) => {
+            if (viewerToken !== this.state.pdfRenderToken) return;
+            const lbl = document.getElementById('pdf-loading-label');
+            if (lbl) lbl.textContent = `กำลังเปิดเอกสาร PDF... ${pct}%`;
+          });
+          if (viewerToken !== this.state.pdfRenderToken) return;
+
           if (result && result.tooLargeForBase64) {
-            container.innerHTML = `
-              <div class="w-full max-w-4xl flex-1 flex flex-col gap-2 min-h-[75dvh]">
-                <div class="flex flex-wrap items-center justify-between gap-2 bg-[#141a0d] px-3 py-2 rounded-xl border border-[#c9a227]/30 text-xs text-stone-200">
-                  <span>ไฟล์ขนาดใหญ่ (${(Number(doc.fileSize || 0) / 1048576).toFixed(1)} MB) — แสดงผลผ่าน Google Drive Viewer</span>
-                  <a href="https://drive.google.com/uc?export=download&id=${encodeURIComponent(doc.driveFileId)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1 bg-[#c9a227] text-[#141a0b] font-bold rounded-lg">⬇ ดาวน์โหลดไฟล์เต็ม</a>
-                </div>
-                <iframe src="https://drive.google.com/file/d/${encodeURIComponent(doc.driveFileId)}/preview" class="w-full flex-1 min-h-[70dvh] rounded-xl border border-white/10 bg-white" allow="autoplay"></iframe>
-              </div>`;
+            this.renderDrivePreviewViewer(doc);
             return;
           }
           if (!result || !(result instanceof Uint8Array) || result.length === 0) {
             throw new Error('ไม่พบข้อมูลไฟล์ PDF หรือไฟล์ยังไม่ถูกบันทึกสมบูรณ์');
           }
-          // ตรวจสอบว่าไม่ใช่ไฟล์ HTML ที่ผิดพลาด
-          const headStr = String.fromCharCode(...result.subarray(0, Math.min(16, result.length))).trim().toLowerCase();
-          if (headStr.startsWith('<!doc') || headStr.startsWith('<html')) {
-            throw new Error('ไฟล์ใน Drive ไม่ใช่ไฟล์ PDF ที่สมบูรณ์ กรุณาอัปโหลดไฟล์ใหม่ในหน้าผู้ดูแลระบบ');
+          if (!this.isPdfMagicBytes(result)) {
+            const headStr = String.fromCharCode(...result.subarray(0, Math.min(16, result.length))).trim().toLowerCase();
+            if (headStr.startsWith('<!doc') || headStr.startsWith('<html')) {
+              throw new Error('ไฟล์ใน Drive ไม่ใช่ไฟล์ PDF ที่สมบูรณ์ กรุณาอัปโหลดไฟล์ใหม่ในหน้าผู้ดูแลระบบ');
+            }
           }
           this.state.viewingPdfBytes = result;
           await this.renderPdfBytes(result, docId);
         } catch (err) {
-            container.innerHTML = `
-              <div class="my-auto text-center text-stone-300 p-6 bg-[#1b1d1f] rounded-2xl border border-white/10 max-w-md space-y-3">
-                <p class="text-sm text-red-400 font-semibold">ไม่สามารถเปิดเอกสารได้</p>
-                <p class="text-xs text-stone-400 leading-relaxed">${escHtml(err.message || 'ไม่สามารถดึงไฟล์ PDF ได้')}</p>
-                <div class="pt-2 flex items-center justify-center gap-2">
-                  <button onclick="app.openPdfViewer('${escHtml(docId)}')" class="px-4 py-2 text-xs font-semibold bg-[#46562a] hover:bg-[#38461f] rounded-xl text-white shadow-md">🔄 ลองเปิดใหม่</button>
-                  <button onclick="app.closeSubView()" class="px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 rounded-xl text-white">ปิด</button>
-                </div>
-              </div>`;
+          if (viewerToken !== this.state.pdfRenderToken) return;
+          container.innerHTML = `
+            <div class="my-auto mx-auto text-center text-stone-300 p-6 bg-[#1b1d1f] rounded-2xl border border-white/10 max-w-md space-y-3">
+              <p class="text-sm text-red-400 font-semibold">ไม่สามารถเปิดเอกสารได้</p>
+              <p class="text-xs text-stone-400 leading-relaxed">${escHtml(err.message || 'ไม่สามารถดึงไฟล์ PDF ได้')}</p>
+              <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                ${doc.driveFileId ? `<button onclick="app.renderDrivePreviewViewer(app.state.viewingPdfDoc)" class="px-4 py-2 text-xs font-semibold bg-[#c9a227] text-[#141a0b] rounded-xl shadow-md">เปิดผ่าน Google Drive</button>` : ''}
+                <button onclick="app.openPdfViewer('${escHtml(docId)}')" class="px-4 py-2 text-xs font-semibold bg-[#46562a] hover:bg-[#38461f] rounded-xl text-white shadow-md">🔄 ลองเปิดใหม่</button>
+                <button onclick="app.closeSubView()" class="px-4 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 rounded-xl text-white">ปิด</button>
+              </div>
+            </div>`;
         }
       },
 
       async renderPdfBytes(bytes, docId) {
         let pdf = docId ? pdfProxyCache.get(docId) : null;
         if (!pdf) {
-          const loadingTask = pdfjsLib.getDocument({
-            data: bytes.slice(0),
-            worker: getSharedPdfWorker(),
-            disableAutoFetch: true,
-            disableStream: true,
-          });
-          pdf = await loadingTask.promise;
+          const ready = await ensurePdfJsReady(8000);
+          if (!ready || !window.pdfjsLib) {
+            throw new Error('ตัวอ่าน PDF ยังโหลดไม่สำเร็จ กรุณาเปิดผ่าน Google Drive');
+          }
+          const loadWithWorker = () =>
+            pdfjsLib.getDocument({
+              data: bytes.slice(0),
+              worker: getSharedPdfWorker(),
+              disableAutoFetch: true,
+              disableStream: true,
+            }).promise;
+
+          try {
+            pdf = await Promise.race([
+              loadWithWorker(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('WORKER_TIMEOUT')), 5000)),
+            ]);
+          } catch (workerErr) {
+            // Fallback สำหรับ iOS WKWebView / In-App Browser ที่บล็อก Cross-Origin Web Worker
+            console.warn('PDF worker fallback to main-thread mode:', workerErr && workerErr.message);
+            const fallbackTask = pdfjsLib.getDocument({
+              data: bytes.slice(0),
+              disableWorker: true,
+              disableAutoFetch: true,
+              disableStream: true,
+            });
+            pdf = await fallbackTask.promise;
+          }
           if (docId) pdfProxyCache.set(docId, pdf);
         }
         this.state.pdfProxy = pdf;
@@ -2310,10 +2525,16 @@
         }
         const token = ++this.state.pdfRenderToken;
         const container = document.getElementById('pdf-pages-container');
+        const isMobile = isMobileReaderDevice();
+        container.className = 'flex-1 overflow-auto flex flex-col items-start px-0 py-1 sm:py-3 sm:px-2.5 gap-1.5 sm:gap-3';
         container.innerHTML = '';
 
-        const maxW = Math.max(280, Math.min(window.innerWidth - 20, 960)) * this.state.pdfScale;
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const baseW = isMobile
+          ? Math.max(280, window.innerWidth)
+          : Math.max(280, Math.min(window.innerWidth - 20, 960));
+        const maxW = baseW * this.state.pdfScale;
+        const maxDpr = isMobile ? 1.35 : 1.5;
+        const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
 
         // ใช้สัดส่วนหน้าแรกเป็นขนาดเริ่มต้นของกล่องหน้าถัดไป เพื่อให้แสดงหน้าแรกได้ทันที
         const firstPage = await pdf.getPage(1);
@@ -2329,7 +2550,7 @@
           slot.dataset.rendered = '0';
           slot.style.width = `${Math.floor(firstCss.width)}px`;
           slot.style.height = `${Math.floor(firstCss.height)}px`;
-          slot.className = 'bg-white shadow-xl shrink-0 flex items-center justify-center text-stone-400 text-xs';
+          slot.className = 'bg-white shadow-xl shrink-0 mx-auto flex items-center justify-center text-stone-400 text-xs';
           slot.textContent = `กำลังโหลดหน้า ${p}...`;
           container.appendChild(slot);
           slots.push(slot);
